@@ -1,47 +1,70 @@
-(() => {
-  const form = document.querySelector('[data-quote-form]');
-  const status = document.querySelector('[data-quote-status]');
-  const copyButton = document.querySelector('[data-copy-quote]');
-  if (!form) return;
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Sudamericana Trabajo Aéreo: aplicaciones aéreas, protección de cultivos y siembra aérea.">
+  <meta name="theme-color" content="#f6f3ed">
+  <title>Sudamericana Trabajo Aéreo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#contenido">Saltar al contenido</a>
+  <header class="site-header">
+    <div class="site-shell nav-wrap">
+      <a class="brand" href="index.html" aria-label="Sudamericana Trabajo Aéreo, inicio">
+        <img src="assets/img/logo-sudamericana.png" alt="Sudamericana Trabajo Aéreo">
+      </a>
+      <button class="menu-toggle" type="button" data-menu-toggle aria-label="Abrir menú" aria-expanded="false">☰</button>
+      <nav class="main-nav" data-nav aria-label="Navegación principal">
+        <a class="home-nav" href="index.html" aria-current="page">Inicio</a>
+        <a href="servicios.html">Servicios</a>
+        <a href="clima.html">Clima</a>
+        <a href="presupuestos.html">Presupuestos</a>
+      </nav>
+    </div>
+  </header>
 
-  function buildSummary() {
-    const data = new FormData(form);
-    const lines = [
-      'SOLICITUD DE PRESUPUESTO — SUDAMERICANA TRABAJO AÉREO',
-      '',
-      `Nombre: ${data.get('nombre') || '-'}`,
-      `Teléfono: ${data.get('telefono') || '-'}`,
-      `Email: ${data.get('email') || '-'}`,
-      `Localidad / campo: ${data.get('ubicacion') || '-'}`,
-      `Servicio: ${data.get('servicio') || '-'}`,
-      `Superficie estimada: ${data.get('superficie') || '-'}`,
-      `Fecha deseada: ${data.get('fecha') || '-'}`,
-      '',
-      'Detalle:',
-      `${data.get('detalle') || '-'}`
-    ];
-    return lines.join('\n');
-  }
+  <main id="contenido">
+    <section class="site-shell hero">
+      <div class="reveal">
+        <span class="eyebrow">Precisión desde el aire</span>
+        <h1>Trabajo aéreo.</h1>
+        <p class="lead">Aplicaciones agrícolas y siembra aérea con foco en oportunidad operativa, cobertura y ejecución eficiente.</p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="presupuestos.html">Pedir presupuesto</a>
+          <a class="btn btn-secondary" href="servicios.html">Ver servicios</a>
+        </div>
+      </div>
 
-  form.addEventListener('submit', async (event) => {
-    event.preventDefault();
-    if (!form.reportValidity()) return;
-    const summary = buildSummary();
-    try {
-      await navigator.clipboard.writeText(summary);
-      status.textContent = 'Solicitud preparada y copiada. Ya podés pegarla en WhatsApp o email.';
-    } catch {
-      status.textContent = 'Solicitud preparada. Usá “Copiar solicitud” para llevarla a WhatsApp o email.';
-    }
-  });
+    </section>
 
-  copyButton?.addEventListener('click', async () => {
-    if (!form.reportValidity()) return;
-    try {
-      await navigator.clipboard.writeText(buildSummary());
-      status.textContent = 'Solicitud copiada al portapapeles.';
-    } catch {
-      status.textContent = 'No se pudo copiar automáticamente. Revisá los permisos del navegador.';
-    }
-  });
-})();
+    <section class="site-shell metrics reveal" aria-label="Diferenciales">
+      <div class="metric"><strong>Respuesta rápida</strong><span>La ventana de trabajo importa. Priorizamos coordinación clara.</span></div>
+      <div class="metric"><strong>Enfoque operativo</strong><span>Decisiones orientadas al lote, al clima y a la misión.</span></div>
+      <div class="metric"><strong>Experiencia aérea</strong><span>Trabajo pensado desde la cabina y el campo.</span></div>
+    </section>
+
+    <section class="site-shell cta-strip reveal">
+      <div><h2>¿Tenés un lote para trabajar?</h2><p>Contanos localidad, superficie y servicio. Armamos la consulta en minutos.</p></div>
+      <a class="btn" href="presupuestos.html">Solicitar presupuesto</a>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="site-shell footer-wrap footer-wrap-simple">
+      <div class="footer-links"><a href="servicios.html">Servicios</a><a href="clima.html">Clima</a><a href="presupuestos.html">Presupuestos</a></div>
+      <div class="footer-social" aria-label="Redes sociales">
+        <a href="https://www.instagram.com/sudamericanasrl/" target="_blank" rel="noopener noreferrer">Instagram</a>
+        <a href="https://www.linkedin.com/company/sudamericana-srl/?viewAsMember=true" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+        <a href="https://www.facebook.com/people/Sudamericana-SRL/61591677384655/" target="_blank" rel="noopener noreferrer">Facebook</a>
+      </div>
+      <small>© <span data-year></span> Sudamericana</small>
+    </div>
+  </footer>
+  <script src="assets/js/main.js"></script>
+</body>
+</html>

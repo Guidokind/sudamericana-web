@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Consulta meteorológica para planificación de trabajo aéreo.">
-  <title>Clima | Sudamericana Trabajo Aéreo</title>
+  <meta name="description" content="Servicios de Sudamericana Trabajo Aéreo: herbicidas, fungicidas, insecticidas y siembra aérea.">
+  <title>Servicios | Sudamericana Trabajo Aéreo</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/css/styles.css">
@@ -14,52 +14,29 @@
   <header class="site-header"><div class="site-shell nav-wrap">
     <a class="brand" href="index.html"><img src="assets/img/logo-sudamericana.png" alt="Sudamericana Trabajo Aéreo"></a>
     <button class="menu-toggle" type="button" data-menu-toggle aria-label="Abrir menú" aria-expanded="false">☰</button>
-    <nav class="main-nav" data-nav><a class="hangar-nav" href="index.html">Inicio</a><a href="servicios.html">Servicios</a><a href="clima.html" aria-current="page">Clima</a><a href="presupuestos.html">Presupuestos</a></nav>
+    <nav class="main-nav" data-nav><a class="home-nav" href="index.html">Inicio</a><a href="servicios.html" aria-current="page">Servicios</a><a href="clima.html">Clima</a><a href="presupuestos.html">Presupuestos</a></nav>
   </div></header>
 
   <main id="contenido">
     <section class="site-shell page-hero reveal">
-      <span class="eyebrow">Clima operativo</span>
-      <h1>Mirar el cielo antes de despegar.</h1>
-      <p class="lead">Consulta rápida de temperatura, humedad, viento, ráfagas y probabilidad de lluvia. La información es orientativa y no reemplaza la evaluación operativa ni agronómica.</p>
+      <span class="eyebrow">Servicios</span>
+      <h1>El trabajo correcto, en el momento correcto.</h1>
+      <p class="lead">Aplicaciones y siembra aérea con una propuesta directa, pensada para productores, colonos e ingenieros agrónomos.</p>
     </section>
 
-    <section class="site-shell section weather-layout">
-      <aside class="weather-panel reveal">
-        <form data-weather-search>
-          <label for="weather-place"><strong>Buscar localidad</strong></label>
-          <div class="search-row" style="margin-top:10px">
-            <input class="input" id="weather-place" data-weather-input type="search" placeholder="Ej. Villa Ángela" autocomplete="off">
-            <button class="btn btn-primary" type="submit">Buscar</button>
-          </div>
-        </form>
-        <button class="btn btn-secondary" type="button" data-use-location style="width:100%; margin-top:10px">Usar mi ubicación</button>
-        <p class="form-note" data-weather-status style="margin-top:14px">Cargando datos…</p>
-
-        <div class="current-weather">
-          <span class="eyebrow" data-weather-city>Villa Ángela, Chaco</span>
-          <div class="weather-big" data-temp>--°</div>
-          <p class="weather-meta" data-condition>Consultando condición…</p>
-          <div class="weather-chips">
-            <div class="weather-chip"><small>Viento</small><strong data-wind>--</strong></div>
-            <div class="weather-chip"><small>Ráfagas</small><strong data-gust>--</strong></div>
-            <div class="weather-chip"><small>Humedad</small><strong data-humidity>--</strong></div>
-            <div class="weather-chip"><small>Lluvia</small><strong data-rain>--</strong></div>
-          </div>
-          <div class="spray-status caution" data-spray-status>Esperando evaluación meteorológica…</div>
-        </div>
-      </aside>
-
-      <section class="forecast-panel reveal">
-        <div class="section-head" style="margin-bottom:18px"><div><span class="eyebrow">7 días</span><h2 style="font-size:clamp(2rem,4vw,3.3rem)">Pronóstico</h2></div></div>
-        <div class="forecast-list" data-forecast><p class="form-note">Cargando pronóstico…</p></div>
-        <p class="form-note" style="margin-top:20px">Fuente meteorológica: Open-Meteo. La “ventana favorable” usa una heurística visual simple y no constituye recomendación de aplicación.</p>
-      </section>
+    <section class="site-shell section">
+      <div class="detail-grid">
+        <article class="detail-card detail-card-simple reveal" data-num="01"><span class="eyebrow">Control</span><h2>Herbicidas</h2><p>Aplicaciones aéreas para programas de control de malezas, sujetas a condiciones operativas y a las indicaciones del producto utilizado.</p></article>
+        <article class="detail-card detail-card-simple reveal" data-num="02"><span class="eyebrow">Protección</span><h2>Fungicidas</h2><p>Intervenciones aéreas para proteger el cultivo cuando la cobertura y el tiempo de respuesta son determinantes.</p></article>
+        <article class="detail-card detail-card-simple reveal" data-num="03"><span class="eyebrow">Respuesta</span><h2>Insecticidas</h2><p>Aplicación aérea ante escenarios donde la presión de plagas exige velocidad de reacción y una operación bien coordinada.</p></article>
+        <article class="detail-card detail-card-simple reveal" data-num="04"><span class="eyebrow">Implantación</span><h2>Siembra aérea</h2><p>Distribución aérea de semillas para coberturas y situaciones donde la escala o el acceso vuelven valioso el uso del avión.</p></article>
+      </div>
     </section>
+
+    <section class="site-shell cta-strip reveal"><div><h2>Contanos qué necesitás.</h2><p>Con localidad, hectáreas y servicio podemos ordenar mejor el pedido.</p></div><a class="btn" href="presupuestos.html">Ir a presupuestos</a></section>
   </main>
 
-  <footer class="site-footer"><div class="site-shell footer-wrap"><img src="assets/img/logo-sudamericana.png" alt="Sudamericana Trabajo Aéreo"><div class="footer-links"><a href="servicios.html">Servicios</a><a href="clima.html">Clima</a><a href="presupuestos.html">Presupuestos</a></div><small>© <span data-year></span> Sudamericana</small></div></footer>
+  <footer class="site-footer"><div class="site-shell footer-wrap footer-wrap-simple"><div class="footer-links"><a href="servicios.html">Servicios</a><a href="clima.html">Clima</a><a href="presupuestos.html">Presupuestos</a></div><div class="footer-social" aria-label="Redes sociales"><a href="https://www.instagram.com/sudamericanasrl/" target="_blank" rel="noopener noreferrer">Instagram</a><a href="https://www.linkedin.com/company/sudamericana-srl/?viewAsMember=true" target="_blank" rel="noopener noreferrer">LinkedIn</a><a href="https://www.facebook.com/people/Sudamericana-SRL/61591677384655/" target="_blank" rel="noopener noreferrer">Facebook</a></div><small>© <span data-year></span> Sudamericana</small></div></footer>
   <script src="assets/js/main.js"></script>
-  <script src="assets/js/weather.js"></script>
 </body>
 </html>
