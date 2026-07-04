@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Consulta meteorológica para planificación de trabajo aéreo.">
+  <title>Clima | Sudamericana Trabajo Aéreo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#contenido">Saltar al contenido</a>
+  <header class="site-header"><div class="site-shell nav-wrap">
+    <a class="brand" href="index.html"><img src="assets/img/logo-sudamericana.png" alt="Sudamericana Trabajo Aéreo"></a>
+    <button class="menu-toggle" type="button" data-menu-toggle aria-label="Abrir menú" aria-expanded="false">☰</button>
+    <nav class="main-nav" data-nav><a class="hangar-nav" href="index.html">Inicio</a><a href="servicios.html">Servicios</a><a href="clima.html" aria-current="page">Clima</a><a href="presupuestos.html">Presupuestos</a></nav>
+  </div></header>
+
+  <main id="contenido">
+    <section class="site-shell page-hero reveal">
+      <span class="eyebrow">Clima operativo</span>
+      <h1>Mirar el cielo antes de despegar.</h1>
+      <p class="lead">Consulta rápida de temperatura, humedad, viento, ráfagas y probabilidad de lluvia. La información es orientativa y no reemplaza la evaluación operativa ni agronómica.</p>
+    </section>
+
+    <section class="site-shell section weather-layout">
+      <aside class="weather-panel reveal">
+        <form data-weather-search>
+          <label for="weather-place"><strong>Buscar localidad</strong></label>
+          <div class="search-row" style="margin-top:10px">
+            <input class="input" id="weather-place" data-weather-input type="search" placeholder="Ej. Villa Ángela" autocomplete="off">
+            <button class="btn btn-primary" type="submit">Buscar</button>
+          </div>
+        </form>
+        <button class="btn btn-secondary" type="button" data-use-location style="width:100%; margin-top:10px">Usar mi ubicación</button>
+        <p class="form-note" data-weather-status style="margin-top:14px">Cargando datos…</p>
+
+        <div class="current-weather">
+          <span class="eyebrow" data-weather-city>Villa Ángela, Chaco</span>
+          <div class="weather-big" data-temp>--°</div>
+          <p class="weather-meta" data-condition>Consultando condición…</p>
+          <div class="weather-chips">
+            <div class="weather-chip"><small>Viento</small><strong data-wind>--</strong></div>
+            <div class="weather-chip"><small>Ráfagas</small><strong data-gust>--</strong></div>
+            <div class="weather-chip"><small>Humedad</small><strong data-humidity>--</strong></div>
+            <div class="weather-chip"><small>Lluvia</small><strong data-rain>--</strong></div>
+          </div>
+          <div class="spray-status caution" data-spray-status>Esperando evaluación meteorológica…</div>
+        </div>
+      </aside>
+
+      <section class="forecast-panel reveal">
+        <div class="section-head" style="margin-bottom:18px"><div><span class="eyebrow">7 días</span><h2 style="font-size:clamp(2rem,4vw,3.3rem)">Pronóstico</h2></div></div>
+        <div class="forecast-list" data-forecast><p class="form-note">Cargando pronóstico…</p></div>
+        <p class="form-note" style="margin-top:20px">Fuente meteorológica: Open-Meteo. La “ventana favorable” usa una heurística visual simple y no constituye recomendación de aplicación.</p>
+      </section>
+    </section>
+  </main>
+
+  <footer class="site-footer"><div class="site-shell footer-wrap"><img src="assets/img/logo-sudamericana.png" alt="Sudamericana Trabajo Aéreo"><div class="footer-links"><a href="servicios.html">Servicios</a><a href="clima.html">Clima</a><a href="presupuestos.html">Presupuestos</a></div><small>© <span data-year></span> Sudamericana</small></div></footer>
+  <script src="assets/js/main.js"></script>
+  <script src="assets/js/weather.js"></script>
+</body>
+</html>
