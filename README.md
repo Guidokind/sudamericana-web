@@ -1,61 +1,59 @@
-# Sudamericana Trabajo Aéreo — V6
+# Sudamericana Trabajo Aéreo — V7 SEO
 
-Sitio estático multipágina listo para GitHub + Cloudflare Pages.
+Sitio estático multipágina para GitHub + Cloudflare Pages.
 
-## Cambios principales de V6
+## Páginas públicas
 
-- Home reorganizada para eliminar repeticiones.
-- Navegación simplificada: Servicios, Clima y Contacto.
-- Hero mínimo con un único CTA.
-- Clima integrado como utilidad principal de la Home.
-- Consulta por localidad y geolocalización.
-- Variables actuales: temperatura, viento, dirección, ráfagas, humedad y lluvia próxima.
-- Evaluación meteorológica orientativa.
-- Evolución de las próximas 5 horas.
-- Enlace al pronóstico completo de 7 días.
-- Página de Presupuestos presentada como Contacto, manteniendo el formulario por email.
-- Footer simplificado.
-- Google Tag Manager y Microsoft Clarity conservados.
-- SEO, sitemap, robots, schema, favicon y preview social conservados.
+- `index.html` — Home con clima y presentación de trabajo aéreo agrícola.
+- `servicios.html` — Resumen de servicios.
+- `aplicaciones-aereas-agricolas.html` — Página específica para aplicaciones aéreas agrícolas.
+- `siembra-aerea.html` — Página específica para siembra aérea.
+- `clima.html` — Consulta meteorológica informativa.
+- `presupuestos.html` — Contacto y formulario que prepara un email.
 
-## Páginas
+## Mejoras SEO incluidas
 
-- `index.html` — Home + clima rápido.
-- `servicios.html` — Herbicidas, fungicidas, insecticidas y siembra aérea.
-- `clima.html` — Pronóstico de 7 días.
-- `presupuestos.html` — Contacto + solicitud ordenada por email.
+- títulos `<title>` descriptivos por página
+- meta descriptions específicas
+- `meta robots` index/follow
+- canonical por página
+- Open Graph y Twitter Cards
+- sitemap actualizado
+- robots.txt
+- datos estructurados JSON-LD
+  - LocalBusiness
+  - WebSite
+  - WebPage / ContactPage
+  - BreadcrumbList
+  - Service en páginas específicas
+- enlaces internos entre Home, Servicios y páginas de servicio
+- contenido específico para búsquedas de aplicaciones aéreas y siembra aérea
+- referencias claras a Villa Ángela y Chaco
+- favicon y preview social
 
-## Estructura
-
-```text
-.
-├── index.html
-├── servicios.html
-├── clima.html
-├── presupuestos.html
-├── robots.txt
-├── sitemap.xml
-├── site.webmanifest
-└── assets
-    ├── css/styles.css
-    ├── img/
-    └── js/
-        ├── main.js
-        ├── weather.js
-        └── quote.js
-```
-
-## Cloudflare Pages
-
-- Framework preset: `None`
-- Build command: dejar vacío
-- Build output directory: `/`
-
-## Analítica
+## Analítica instalada
 
 - Google Tag Manager: `GTM-TZTPRRHF`
 - Microsoft Clarity: `xfdhyn50o7`
 
-## Nota sobre clima
+## Publicación
 
-La pantalla consume Open-Meteo desde el navegador. La evaluación de condiciones es informativa y orientativa; no reemplaza criterio agronómico u operativo, mediciones reales del lote ni indicaciones de etiqueta.
+Subir el contenido de esta carpeta a la raíz del repositorio conectado a Cloudflare Pages.
+
+La raíz debe contener directamente:
+
+```text
+index.html
+servicios.html
+aplicaciones-aereas-agricolas.html
+siembra-aerea.html
+clima.html
+presupuestos.html
+sitemap.xml
+robots.txt
+assets/
+```
+
+## Después de publicar
+
+Ver `SEO-PASOS.md`.
