@@ -1,13 +1,29 @@
-# Sudamericana Trabajo Aéreo — sitio web
+# Sudamericana Trabajo Aéreo — V6
 
-Sitio estático multipágina, listo para GitHub y Cloudflare Pages.
+Sitio estático multipágina listo para GitHub + Cloudflare Pages.
+
+## Cambios principales de V6
+
+- Home reorganizada para eliminar repeticiones.
+- Navegación simplificada: Servicios, Clima y Contacto.
+- Hero mínimo con un único CTA.
+- Clima integrado como utilidad principal de la Home.
+- Consulta por localidad y geolocalización.
+- Variables actuales: temperatura, viento, dirección, ráfagas, humedad y lluvia próxima.
+- Evaluación meteorológica orientativa.
+- Evolución de las próximas 5 horas.
+- Enlace al pronóstico completo de 7 días.
+- Página de Presupuestos presentada como Contacto, manteniendo el formulario por email.
+- Footer simplificado.
+- Google Tag Manager y Microsoft Clarity conservados.
+- SEO, sitemap, robots, schema, favicon y preview social conservados.
 
 ## Páginas
 
-- `index.html` — Home.
+- `index.html` — Home + clima rápido.
 - `servicios.html` — Herbicidas, fungicidas, insecticidas y siembra aérea.
-- `clima.html` — Consulta meteorológica en vivo con Open-Meteo.
-- `presupuestos.html` — Formulario que prepara y copia una solicitud por email.
+- `clima.html` — Pronóstico de 7 días.
+- `presupuestos.html` — Contacto + solicitud ordenada por email.
 
 ## Estructura
 
@@ -23,50 +39,10 @@ Sitio estático multipágina, listo para GitHub y Cloudflare Pages.
 └── assets
     ├── css/styles.css
     ├── img/
-    │   ├── logo-sudamericana.png
-    │   ├── favicon-s.png
-    │   ├── favicon-16x16.png
-    │   ├── favicon-32x32.png
-    │   ├── favicon-192x192.png
-    │   ├── favicon-512x512.png
-    │   ├── apple-touch-icon.png
-    │   └── preview-social.png
-    └── js
+    └── js/
         ├── main.js
         ├── weather.js
         └── quote.js
-```
-
-## Configuración SEO / analítica incluida
-
-- Microsoft Clarity (`xfdhyn50o7`)
-- favicon e íconos del sitio
-- Open Graph / Twitter preview
-- `robots.txt`
-- `sitemap.xml`
-- `schema.org` tipo `LocalBusiness`
-- `canonical` por página
-
-## Publicar en GitHub
-
-Desde la carpeta del proyecto:
-
-```bash
-git init
-git add .
-git commit -m "Sudamericana web v4"
-git branch -M main
-git remote add origin https://github.com/Guidokind/sudamericana-web.git
-git push -u origin main
-```
-
-Si `origin` ya existe:
-
-```bash
-git remote set-url origin https://github.com/Guidokind/sudamericana-web.git
-git add .
-git commit -m "Sudamericana web v4"
-git push origin main
 ```
 
 ## Cloudflare Pages
@@ -75,6 +51,11 @@ git push origin main
 - Build command: dejar vacío
 - Build output directory: `/`
 
+## Analítica
+
+- Google Tag Manager: `GTM-TZTPRRHF`
+- Microsoft Clarity: `xfdhyn50o7`
+
 ## Nota sobre clima
 
-La pantalla consume la API pública de Open-Meteo desde el navegador. La valoración de “ventana meteorológica” es solo una heurística visual orientativa; no reemplaza criterio operativo, agronómico ni indicaciones de etiqueta.
+La pantalla consume Open-Meteo desde el navegador. La evaluación de condiciones es informativa y orientativa; no reemplaza criterio agronómico u operativo, mediciones reales del lote ni indicaciones de etiqueta.
