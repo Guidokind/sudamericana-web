@@ -138,7 +138,10 @@
         <form data-weather-search>
           <label for="weather-place"><strong>Buscar localidad</strong></label>
           <div class="search-row" style="margin-top:10px">
-            <input class="input" id="weather-place" data-weather-input type="search" placeholder="Ej. Villa Ángela" autocomplete="off">
+            <div class="search-autocomplete">
+              <input class="input" id="weather-place" data-weather-input type="search" placeholder="Ej. Villa Ángela" autocomplete="off" spellcheck="false">
+              <div class="search-suggestions" data-weather-suggestions hidden></div>
+            </div>
             <button class="btn btn-primary" type="submit">Buscar</button>
           </div>
         </form>

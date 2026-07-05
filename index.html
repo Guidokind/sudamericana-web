@@ -154,7 +154,10 @@
         <form class="home-weather-search" data-weather-search>
           <label class="sr-only" for="home-weather-place">Buscar localidad</label>
           <div class="search-row">
-            <input class="input" id="home-weather-place" data-weather-input type="search" placeholder="Ej. Villa Ángela" autocomplete="off">
+            <div class="search-autocomplete">
+              <input class="input" id="home-weather-place" data-weather-input type="search" placeholder="Ej. Villa Ángela" autocomplete="off" spellcheck="false">
+              <div class="search-suggestions" data-weather-suggestions hidden></div>
+            </div>
             <button class="btn btn-primary" type="submit">Buscar</button>
           </div>
           <button class="location-link" type="button" data-use-location>Usar mi ubicación</button>
@@ -170,7 +173,6 @@
               <div class="weather-big" data-temp>--°</div>
               <p class="weather-meta" data-condition>Consultando condición…</p>
             </div>
-            <img class="home-weather-mark" src="assets/img/favicon-s.png" alt="" aria-hidden="true">
           </div>
 
           <div class="home-weather-stats" aria-label="Variables meteorológicas actuales">

@@ -2,7 +2,8 @@
   const form = document.querySelector('[data-weather-search]');
   if (!form) return;
 
-  const input = document.querySelector('[data-weather-input]');
+  const input = form.querySelector('[data-weather-input]');
+  const suggestionsEl = form.querySelector('[data-weather-suggestions]');
   const useLocationBtn = document.querySelector('[data-use-location]');
   const statusEl = document.querySelector('[data-weather-status]');
   const cityEl = document.querySelector('[data-weather-city]');
@@ -26,6 +27,12 @@
     81: 'Chaparrones', 82: 'Chaparrones intensos', 95: 'Tormenta', 96: 'Tormenta con granizo',
     99: 'Tormenta fuerte con granizo'
   };
+
+  let suggestionItems = [];
+  let activeSuggestionIndex = -1;
+  let selectedPlace = null;
+  let debounceTimer = null;
+  let lastSuggestionRequest = 0;
 
   function setStatus(message, isError = false) {
     if (!statusEl) return;
@@ -57,11 +64,7 @@
     if (gust > 32) reasons.push('ráfagas elevadas');
 
     if (reasons.length) {
-      return {
-        cls: 'bad',
-        title: 'Desfavorables',
-        detail: reasons.join(' · ')
-      };
+      return { cls: 'bad', title: 'Desfavorables', detail: reasons.join(' · ') };
     }
 
     if (rain3h >= 25) reasons.push('lluvia próxima a vigilar');
@@ -70,11 +73,7 @@
     if (humidity < 35) reasons.push('humedad relativa baja');
 
     if (reasons.length) {
-      return {
-        cls: 'caution',
-        title: 'A evaluar',
-        detail: reasons.join(' · ')
-      };
+      return { cls: 'caution', title: 'A evaluar', detail: reasons.join(' · ') };
     }
 
     return {
@@ -84,10 +83,10 @@
     };
   }
 
-  async function geocode(query) {
+  async function geocodeSearch(query, count = 1) {
     const url = new URL('https://geocoding-api.open-meteo.com/v1/search');
     url.searchParams.set('name', query);
-    url.searchParams.set('count', '1');
+    url.searchParams.set('count', String(count));
     url.searchParams.set('language', 'es');
     url.searchParams.set('format', 'json');
 
@@ -95,8 +94,61 @@
     if (!response.ok) throw new Error('No se pudo buscar la localidad.');
 
     const data = await response.json();
-    if (!data.results?.length) throw new Error('No encontramos esa localidad.');
-    return data.results[0];
+    if (!data.results?.length) return [];
+    return data.results;
+  }
+
+  function placeLabel(place) {
+    return [place.name, place.admin1].filter(Boolean).join(', ');
+  }
+
+  function placeMeta(place) {
+    return [place.admin1, place.country].filter(Boolean).join(' · ');
+  }
+
+  function clearSuggestions() {
+    suggestionItems = [];
+    activeSuggestionIndex = -1;
+    if (!suggestionsEl) return;
+    suggestionsEl.hidden = true;
+    suggestionsEl.innerHTML = '';
+  }
+
+  function setActiveSuggestion(index) {
+    if (!suggestionItems.length) return;
+    activeSuggestionIndex = index;
+    Array.from(suggestionsEl.querySelectorAll('.search-suggestion')).forEach((button, buttonIndex) => {
+      button.classList.toggle('is-active', buttonIndex === activeSuggestionIndex);
+      if (buttonIndex === activeSuggestionIndex) button.scrollIntoView({ block: 'nearest' });
+    });
+  }
+
+  async function choosePlace(place) {
+    selectedPlace = place;
+    if (input) input.value = placeLabel(place);
+    clearSuggestions();
+    await fetchWeather(place.latitude, place.longitude, placeLabel(place));
+  }
+
+  function renderSuggestions(results) {
+    if (!suggestionsEl) return;
+    if (!results.length) {
+      suggestionsEl.innerHTML = '<div class="search-suggestions-note">No encontramos coincidencias.</div>';
+      suggestionsEl.hidden = false;
+      suggestionItems = [];
+      activeSuggestionIndex = -1;
+      return;
+    }
+
+    suggestionItems = results;
+    activeSuggestionIndex = -1;
+    suggestionsEl.innerHTML = results.map((place, index) => (`
+      <button class="search-suggestion" type="button" data-suggestion-index="${index}">
+        <strong>${place.name}</strong>
+        <span>${placeMeta(place)}</span>
+      </button>
+    `)).join('');
+    suggestionsEl.hidden = false;
   }
 
   function renderHourly(data, startIndex) {
@@ -198,23 +250,98 @@
     setStatus(`Actualizado para ${label}.`);
   }
 
+  async function loadSuggestions(query) {
+    if (!suggestionsEl) return;
+    const requestId = ++lastSuggestionRequest;
+    suggestionsEl.innerHTML = '<div class="search-suggestions-note">Buscando localidades…</div>';
+    suggestionsEl.hidden = false;
+
+    try {
+      const results = await geocodeSearch(query, 6);
+      if (requestId !== lastSuggestionRequest) return;
+      renderSuggestions(results);
+    } catch (error) {
+      if (requestId !== lastSuggestionRequest) return;
+      suggestionsEl.innerHTML = '<div class="search-suggestions-note">No se pudieron cargar las sugerencias.</div>';
+      suggestionsEl.hidden = false;
+    }
+  }
+
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
     const query = input?.value.trim() || '';
     if (query.length < 2) return setStatus('Escribí una localidad.', true);
 
     try {
-      const place = await geocode(query);
-      const label = [place.name, place.admin1].filter(Boolean).join(', ');
-      await fetchWeather(place.latitude, place.longitude, label);
+      if (selectedPlace && query.toLowerCase() === placeLabel(selectedPlace).toLowerCase()) {
+        await choosePlace(selectedPlace);
+        return;
+      }
+      const results = await geocodeSearch(query, 1);
+      if (!results.length) throw new Error('No encontramos esa localidad.');
+      await choosePlace(results[0]);
     } catch (error) {
       setStatus(error.message || 'Ocurrió un error.', true);
     }
   });
 
+  input?.addEventListener('input', () => {
+    selectedPlace = null;
+    const query = input.value.trim();
+    window.clearTimeout(debounceTimer);
+    if (query.length < 3) {
+      clearSuggestions();
+      return;
+    }
+    debounceTimer = window.setTimeout(() => {
+      loadSuggestions(query);
+    }, 300);
+  });
+
+  input?.addEventListener('keydown', async (event) => {
+    if (suggestionsEl?.hidden || !suggestionItems.length) return;
+
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      const next = activeSuggestionIndex < suggestionItems.length - 1 ? activeSuggestionIndex + 1 : 0;
+      setActiveSuggestion(next);
+      return;
+    }
+
+    if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      const prev = activeSuggestionIndex > 0 ? activeSuggestionIndex - 1 : suggestionItems.length - 1;
+      setActiveSuggestion(prev);
+      return;
+    }
+
+    if (event.key === 'Enter' && activeSuggestionIndex >= 0) {
+      event.preventDefault();
+      await choosePlace(suggestionItems[activeSuggestionIndex]);
+      return;
+    }
+
+    if (event.key === 'Escape') {
+      clearSuggestions();
+    }
+  });
+
+  suggestionsEl?.addEventListener('click', async (event) => {
+    const button = event.target.closest('[data-suggestion-index]');
+    if (!button) return;
+    const index = Number(button.dataset.suggestionIndex);
+    if (!Number.isInteger(index) || !suggestionItems[index]) return;
+    await choosePlace(suggestionItems[index]);
+  });
+
+  document.addEventListener('click', (event) => {
+    if (!form.contains(event.target)) clearSuggestions();
+  });
+
   useLocationBtn?.addEventListener('click', () => {
     if (!navigator.geolocation) return setStatus('Tu navegador no permite geolocalización.', true);
 
+    clearSuggestions();
     setStatus('Solicitando ubicación…');
     navigator.geolocation.getCurrentPosition(
       (position) => fetchWeather(position.coords.latitude, position.coords.longitude, 'Ubicación actual')
@@ -224,7 +351,6 @@
     );
   });
 
-  // Vista inicial: Villa Ángela, Chaco.
   fetchWeather(-27.57, -60.72, 'Villa Ángela, Chaco')
     .catch((error) => setStatus(error.message || 'No se pudo cargar el clima.', true));
 })();
