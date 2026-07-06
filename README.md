@@ -1,59 +1,74 @@
-# Sudamericana Trabajo Aéreo — V7 SEO
+# Sudamericana Lluvias V1
 
-Sitio estático multipágina para GitHub + Cloudflare Pages.
+## Qué incluye
 
-## Páginas públicas
+- `lluvias.html`
+- `assets/css/lluvias.css`
+- `assets/js/lluvias.js`
+- `worker/lluvias-worker.js`
+- `worker/schema.sql`
+- `CHECKLIST-DESPLIEGUE.md`
 
-- `index.html` — Home con clima y presentación de trabajo aéreo agrícola.
-- `servicios.html` — Resumen de servicios.
-- `aplicaciones-aereas-agricolas.html` — Página específica para aplicaciones aéreas agrícolas.
-- `siembra-aerea.html` — Página específica para siembra aérea.
-- `clima.html` — Consulta meteorológica informativa.
-- `presupuestos.html` — Contacto y formulario que prepara un email.
-
-## Mejoras SEO incluidas
-
-- títulos `<title>` descriptivos por página
-- meta descriptions específicas
-- `meta robots` index/follow
-- canonical por página
-- Open Graph y Twitter Cards
-- sitemap actualizado
-- robots.txt
-- datos estructurados JSON-LD
-  - LocalBusiness
-  - WebSite
-  - WebPage / ContactPage
-  - BreadcrumbList
-  - Service en páginas específicas
-- enlaces internos entre Home, Servicios y páginas de servicio
-- contenido específico para búsquedas de aplicaciones aéreas y siembra aérea
-- referencias claras a Villa Ángela y Chaco
-- favicon y preview social
-
-## Analítica instalada
-
-- Google Tag Manager: `GTM-TZTPRRHF`
-- Microsoft Clarity: `xfdhyn50o7`
-
-## Publicación
-
-Subir el contenido de esta carpeta a la raíz del repositorio conectado a Cloudflare Pages.
-
-La raíz debe contener directamente:
+## Arquitectura recomendada
 
 ```text
-index.html
-servicios.html
-aplicaciones-aereas-agricolas.html
-siembra-aerea.html
-clima.html
-presupuestos.html
-sitemap.xml
-robots.txt
-assets/
+sudamericanasrl.com/lluvias.html
+        ↓
+lluvias-api.sudamericanasrl.com
+        ↓
+Cloudflare Worker: sudamericana-lluvias
+        ↓
+Cloudflare D1
+        ↓
+Cloudflare Email Sending
 ```
 
-## Después de publicar
+El Worker de contacto actual no se toca.
 
-Ver `SEO-PASOS.md`.
+## Decisiones de V1
+
+- No hay cuentas ni contraseñas.
+- El colaborador confirma control del email con código de 6 dígitos.
+- Turnstile se valida del lado servidor.
+- El email nunca se publica.
+- La API pública redondea latitud/longitud a 3 decimales (aprox. 100 m).
+- Se guarda la coordenada exacta para el dato interno, pero no se devuelve al mapa público.
+- Límite básico: 5 intentos/hora por IP hash y 20 publicaciones/día por email hash.
+- Solo se guardan hashes de email en reportes publicados.
+- El email en texto plano existe únicamente en la tabla pendiente y se elimina al verificar.
+
+## Variables y secretos del Worker
+
+### Binding D1
+- `DB`
+
+### Texto
+- `CF_ACCOUNT_ID`
+
+### Secretos
+- `CF_EMAIL_API_TOKEN`
+- `TURNSTILE_SECRET_KEY`
+- `VERIFY_CODE_SECRET`
+- `EMAIL_HASH_SALT`
+- `IP_HASH_SALT`
+
+Para los tres últimos secretos, usar valores largos y aleatorios diferentes entre sí.
+
+## Configuración en el HTML
+
+En `lluvias.html`:
+
+```js
+window.SUDAMERICANA_LLUVIAS = {
+  apiBase: 'https://lluvias-api.sudamericanasrl.com',
+  turnstileSiteKey: 'REEMPLAZAR_TURNSTILE_SITEKEY'
+};
+```
+
+Reemplazar únicamente la sitekey.
+
+## Mapa
+
+Leaflet 1.9.4 + teselas estándar de OpenStreetMap con atribución visible.
+
+Para tráfico alto, conviene migrar las teselas a un proveedor con SLA/plan propio.

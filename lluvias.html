@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <!-- Google Tag Manager -->
+  <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+  new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+  j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+  'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+  })(window,document,'script','dataLayer','GTM-TZTPRRHF');</script>
+  <!-- End Google Tag Manager -->
+
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>Lluvias reportadas | Sudamericana Trabajo Aéreo</title>
+  <meta name="description" content="Mapa colaborativo de lluvias reportadas por productores, colonos y usuarios rurales. Consultá milímetros, estado de la lluvia y reportes recientes.">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <meta name="theme-color" content="#f6f3ed">
+  <link rel="canonical" href="https://sudamericanasrl.com/lluvias.html">
+
+  <link rel="icon" href="/assets/img/favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/img/favicon-32x32.png">
+  <link rel="apple-touch-icon" href="/assets/img/apple-touch-icon.png">
+  <link rel="manifest" href="/site.webmanifest">
+
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Sudamericana Trabajo Aéreo">
+  <meta property="og:title" content="Lluvias reportadas | Sudamericana">
+  <meta property="og:description" content="Mapa colaborativo de lluvias recientes compartidas por usuarios rurales.">
+  <meta property="og:url" content="https://sudamericanasrl.com/lluvias.html">
+  <meta property="og:image" content="https://sudamericanasrl.com/assets/img/preview-social.png">
+  <meta property="og:locale" content="es_AR">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="assets/css/styles.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="assets/css/lluvias.css">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "name": "Lluvias reportadas",
+    "url": "https://sudamericanasrl.com/lluvias.html",
+    "description": "Mapa colaborativo de lluvias recientes reportadas por usuarios rurales.",
+    "isPartOf": {
+      "@type": "WebSite",
+      "name": "Sudamericana Trabajo Aéreo",
+      "url": "https://sudamericanasrl.com/"
+    },
+    "inLanguage": "es-AR"
+  }
+  </script>
+
+  <script>
+    window.SUDAMERICANA_LLUVIAS = {
+      apiBase: 'https://lluvias-api.sudamericanasrl.com',
+      turnstileSiteKey: 'REEMPLAZAR_TURNSTILE_SITEKEY'
+    };
+  </script>
+
+  <script type="text/javascript">
+  (function(c,l,a,r,i,t,y){
+    c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+    t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+    y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+  })(window, document, "clarity", "script", "xfdhyn50o7");
+  </script>
+</head>
+
+<body>
+  <!-- Google Tag Manager (noscript) -->
+  <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TZTPRRHF"
+  height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+  <!-- End Google Tag Manager (noscript) -->
+
+  <a class="skip-link" href="#contenido">Saltar al contenido</a>
+
+  <header class="site-header">
+    <div class="site-shell nav-wrap">
+      <a class="brand" href="index.html" aria-label="Sudamericana Trabajo Aéreo, inicio">
+        <img src="assets/img/logo-sudamericana.png" alt="Sudamericana Trabajo Aéreo">
+      </a>
+
+      <button class="menu-toggle" type="button" data-menu-toggle aria-label="Abrir menú" aria-expanded="false">☰</button>
+
+      <nav class="main-nav" data-nav aria-label="Navegación principal">
+        <a href="servicios.html">Servicios</a>
+        <a href="clima.html">Clima</a>
+        <a href="lluvias.html" aria-current="page">Lluvias</a>
+        <a href="presupuestos.html">Contacto</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="contenido">
+    <section class="site-shell rain-hero">
+      <div class="rain-hero-copy reveal">
+        <span class="eyebrow">Información compartida por la comunidad rural</span>
+        <h1>Lluvias reportadas.</h1>
+        <p class="lead">Consultá mediciones recientes y compartí cuánto llovió en tu campo o zona. Los reportes publicados verifican el control del email del colaborador.</p>
+      </div>
+
+      <div class="rain-hero-actions reveal">
+        <button class="btn btn-primary" type="button" data-open-report>+ Reportar lluvia</button>
+        <button class="btn btn-secondary" type="button" data-use-location>Ver mi zona</button>
+      </div>
+    </section>
+
+    <section class="site-shell rain-workspace reveal" aria-labelledby="map-title">
+      <div class="rain-toolbar">
+        <div>
+          <span class="eyebrow">Mapa colaborativo</span>
+          <h2 id="map-title">Reportes recientes</h2>
+        </div>
+
+        <div class="rain-filters" role="group" aria-label="Período de reportes">
+          <button type="button" data-hours="6">6 h</button>
+          <button type="button" class="is-active" data-hours="24">24 h</button>
+          <button type="button" data-hours="72">3 días</button>
+          <button type="button" data-hours="168">7 días</button>
+        </div>
+      </div>
+
+      <div class="rain-map-shell">
+        <div id="rain-map" class="rain-map" role="application" aria-label="Mapa de lluvias reportadas"></div>
+
+        <div class="rain-map-status" data-map-status aria-live="polite">
+          Cargando reportes…
+        </div>
+
+        <div class="rain-map-legend" aria-label="Información del mapa">
+          <strong data-report-count>0 reportes</strong>
+          <span>Ubicaciones públicas aproximadas</span>
+        </div>
+      </div>
+
+      <div class="rain-trust-strip">
+        <div>
+          <strong>Email verificado</strong>
+          <span>Cada publicación se confirma con un código enviado al correo informado.</span>
+        </div>
+        <div>
+          <strong>Privacidad rural</strong>
+          <span>El mapa público desplaza o redondea el punto; no muestra email ni ubicación exacta.</span>
+        </div>
+        <div>
+          <strong>Dato colaborativo</strong>
+          <span>No reemplaza estaciones meteorológicas ni mediciones oficiales.</span>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <dialog class="rain-dialog" data-report-dialog aria-labelledby="report-title">
+    <form class="rain-dialog-card" data-report-form>
+      <div class="rain-dialog-head">
+        <div>
+          <span class="eyebrow">Compartir medición</span>
+          <h2 id="report-title">Reportar lluvia</h2>
+        </div>
+        <button class="rain-close" type="button" data-close-report aria-label="Cerrar">×</button>
+      </div>
+
+      <p class="rain-dialog-intro">Elegí el punto en el mapa o usá tu ubicación. Recomendamos informar milímetros medidos con pluviómetro.</p>
+
+      <div class="rain-location-box">
+        <div>
+          <small>Ubicación seleccionada</small>
+          <strong data-selected-location>Sin seleccionar</strong>
+        </div>
+        <div class="rain-location-actions">
+          <button class="btn btn-secondary btn-small" type="button" data-dialog-location>Usar mi ubicación</button>
+          <button class="btn btn-secondary btn-small" type="button" data-pick-map>Elegir en mapa</button>
+        </div>
+      </div>
+
+      <div class="rain-form-grid">
+        <label class="rain-field">
+          <span>Email</span>
+          <input class="input" type="email" name="email" autocomplete="email" required maxlength="254" placeholder="tu@email.com">
+        </label>
+
+        <label class="rain-field">
+          <span>Milímetros</span>
+          <div class="rain-mm-input">
+            <input class="input" type="number" name="millimeters" inputmode="decimal" min="0.1" max="500" step="0.1" required placeholder="30">
+            <span>mm</span>
+          </div>
+        </label>
+
+        <label class="rain-field">
+          <span>Intensidad observada</span>
+          <select class="input" name="intensity" required>
+            <option value="">Seleccionar</option>
+            <option value="weak">Débil</option>
+            <option value="moderate">Moderada</option>
+            <option value="strong">Fuerte</option>
+          </select>
+        </label>
+
+        <label class="rain-field">
+          <span>Referencia de zona <small>(opcional)</small></span>
+          <input class="input" type="text" name="placeLabel" maxlength="100" placeholder="Ej. Colonia El Pastoril">
+        </label>
+      </div>
+
+      <div class="rain-checks">
+        <label><input type="checkbox" name="ongoing"> Sigue lloviendo</label>
+        <label><input type="checkbox" name="measured" checked> Medido con pluviómetro</label>
+      </div>
+
+      <label class="rain-field">
+        <span>Comentario breve <small>(opcional)</small></span>
+        <textarea class="input rain-textarea" name="comment" maxlength="220" rows="3" placeholder="Ej. 30 minutos de lluvia fuerte y sigue."></textarea>
+        <small class="rain-char-note">Máximo 220 caracteres.</small>
+      </label>
+
+      <div class="rain-turnstile" data-turnstile-host></div>
+
+      <p class="rain-form-note">Al publicar, el punto visible en el mapa será aproximado. Tu email no se muestra públicamente.</p>
+      <p class="rain-form-status" data-report-status aria-live="polite"></p>
+
+      <div class="rain-dialog-actions">
+        <button class="btn btn-secondary" type="button" data-close-report>Cancelar</button>
+        <button class="btn btn-primary" type="submit">Enviar código</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog class="rain-dialog" data-verify-dialog aria-labelledby="verify-title">
+    <form class="rain-dialog-card rain-verify-card" data-verify-form>
+      <div class="rain-dialog-head">
+        <div>
+          <span class="eyebrow">Verificación</span>
+          <h2 id="verify-title">Confirmá tu email</h2>
+        </div>
+      </div>
+
+      <p>Enviamos un código de 6 dígitos a <strong data-masked-email>tu email</strong>.</p>
+
+      <label class="rain-field">
+        <span>Código</span>
+        <input class="input rain-code-input" type="text" name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required placeholder="000000">
+      </label>
+
+      <p class="rain-form-status" data-verify-status aria-live="polite"></p>
+
+      <div class="rain-dialog-actions">
+        <button class="btn btn-secondary" type="button" data-cancel-verify>Cancelar</button>
+        <button class="btn btn-primary" type="submit">Publicar reporte</button>
+      </div>
+    </form>
+  </dialog>
+
+  <footer class="site-footer">
+    <div class="site-shell footer-wrap footer-wrap-simple">
+      <div class="footer-social" aria-label="Redes sociales">
+        <a href="https://www.instagram.com/sudamericanasrl/" target="_blank" rel="noopener noreferrer">Instagram</a>
+        <a href="https://www.linkedin.com/company/sudamericana-srl/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+        <a href="https://www.facebook.com/people/Sudamericana-SRL/61591677384655/" target="_blank" rel="noopener noreferrer">Facebook</a>
+      </div>
+      <small>© <span data-year></span> Sudamericana · Ruta 95 km 1024</small>
+    </div>
+  </footer>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
+  <script src="assets/js/main.js"></script>
+  <script src="assets/js/lluvias.js"></script>
+</body>
+</html>

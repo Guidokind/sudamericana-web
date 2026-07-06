@@ -1,0 +1,16 @@
+CAMBIO DE NAVEGACIÓN RECOMENDADO
+
+En cada página pública, dentro de:
+
+<nav class="main-nav" data-nav aria-label="Navegación principal">
+
+agregar:
+
+<a href="lluvias.html">Lluvias</a>
+
+Orden recomendado:
+
+<a href="servicios.html">Servicios</a>
+<a href="clima.html">Clima</a>
+<a href="lluvias.html">Lluvias</a>
+<a href="presupuestos.html">Contacto</a>
