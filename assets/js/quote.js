@@ -62,7 +62,7 @@
     const timeout = window.setTimeout(() => controller.abort(), 15000);
 
     try {
-      const response = await fetch('/api/contacto', {
+      const response = await fetch('https://api.sudamericanasrl.com/contacto', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
