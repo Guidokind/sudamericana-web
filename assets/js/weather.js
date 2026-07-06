@@ -34,10 +34,44 @@
   let debounceTimer = null;
   let lastSuggestionRequest = 0;
 
+  const STORAGE_KEY = 'sudamericana.weather.last-place.v1';
+  const FALLBACK_PLACE = {
+    latitude: -27.57,
+    longitude: -60.72,
+    label: 'Villa Ángela, Chaco'
+  };
+
   function setStatus(message, isError = false) {
     if (!statusEl) return;
     statusEl.textContent = message;
     statusEl.style.color = isError ? '#9d1630' : '';
+  }
+
+  function savePlace(place) {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        latitude: Number(place.latitude),
+        longitude: Number(place.longitude),
+        label: placeLabel(place)
+      }));
+    } catch {
+      // La herramienta sigue funcionando aunque el navegador bloquee localStorage.
+    }
+  }
+
+  function loadSavedPlace() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return null;
+      const place = JSON.parse(raw);
+      const latitude = Number(place.latitude);
+      const longitude = Number(place.longitude);
+      const label = String(place.label || '').trim();
+      if (!Number.isFinite(latitude) || !Number.isFinite(longitude) || !label) return null;
+      return { latitude, longitude, label };
+    } catch {
+      return null;
+    }
   }
 
   function compassDirection(degrees) {
@@ -114,6 +148,11 @@
     suggestionsEl.innerHTML = '';
   }
 
+  function invalidateSuggestions() {
+    lastSuggestionRequest += 1;
+    clearSuggestions();
+  }
+
   function setActiveSuggestion(index) {
     if (!suggestionItems.length) return;
     activeSuggestionIndex = index;
@@ -126,28 +165,45 @@
   async function choosePlace(place) {
     selectedPlace = place;
     if (input) input.value = placeLabel(place);
-    clearSuggestions();
+    invalidateSuggestions();
+    savePlace(place);
     await fetchWeather(place.latitude, place.longitude, placeLabel(place));
   }
 
   function renderSuggestions(results) {
     if (!suggestionsEl) return;
+    suggestionsEl.replaceChildren();
+
     if (!results.length) {
-      suggestionsEl.innerHTML = '<div class="search-suggestions-note">No encontramos coincidencias.</div>';
+      const note = document.createElement('div');
+      note.className = 'search-suggestions-note';
+      note.textContent = 'No encontramos coincidencias.';
+      suggestionsEl.append(note);
       suggestionsEl.hidden = false;
       suggestionItems = [];
       activeSuggestionIndex = -1;
       return;
     }
 
-    suggestionItems = results;
+    suggestionItems = results.slice(0, 6);
     activeSuggestionIndex = -1;
-    suggestionsEl.innerHTML = results.map((place, index) => (`
-      <button class="search-suggestion" type="button" data-suggestion-index="${index}">
-        <strong>${place.name}</strong>
-        <span>${placeMeta(place)}</span>
-      </button>
-    `)).join('');
+
+    suggestionItems.forEach((place, index) => {
+      const button = document.createElement('button');
+      button.className = 'search-suggestion';
+      button.type = 'button';
+      button.dataset.suggestionIndex = String(index);
+
+      const name = document.createElement('strong');
+      name.textContent = String(place.name || 'Localidad');
+
+      const meta = document.createElement('span');
+      meta.textContent = placeMeta(place);
+
+      button.append(name, meta);
+      suggestionsEl.append(button);
+    });
+
     suggestionsEl.hidden = false;
   }
 
@@ -290,7 +346,7 @@
     const query = input.value.trim();
     window.clearTimeout(debounceTimer);
     if (query.length < 3) {
-      clearSuggestions();
+      invalidateSuggestions();
       return;
     }
     debounceTimer = window.setTimeout(() => {
@@ -322,7 +378,7 @@
     }
 
     if (event.key === 'Escape') {
-      clearSuggestions();
+      invalidateSuggestions();
     }
   });
 
@@ -335,22 +391,71 @@
   });
 
   document.addEventListener('click', (event) => {
-    if (!form.contains(event.target)) clearSuggestions();
+    if (!form.contains(event.target)) invalidateSuggestions();
   });
 
-  useLocationBtn?.addEventListener('click', () => {
-    if (!navigator.geolocation) return setStatus('Tu navegador no permite geolocalización.', true);
+  function getCurrentPosition() {
+    return new Promise((resolve, reject) => {
+      if (!navigator.geolocation) {
+        reject(new Error('Tu navegador no permite geolocalización.'));
+        return;
+      }
 
-    clearSuggestions();
-    setStatus('Solicitando ubicación…');
-    navigator.geolocation.getCurrentPosition(
-      (position) => fetchWeather(position.coords.latitude, position.coords.longitude, 'Ubicación actual')
-        .catch((error) => setStatus(error.message || 'No se pudo cargar el clima.', true)),
-      () => setStatus('No se pudo acceder a tu ubicación.', true),
-      { enableHighAccuracy: false, timeout: 9000 }
+      navigator.geolocation.getCurrentPosition(resolve, reject, {
+        enableHighAccuracy: false,
+        timeout: 8000,
+        maximumAge: 10 * 60 * 1000
+      });
+    });
+  }
+
+  async function loadCurrentLocation() {
+    invalidateSuggestions();
+    setStatus('Detectando tu ubicación…');
+    const position = await getCurrentPosition();
+    await fetchWeather(
+      position.coords.latitude,
+      position.coords.longitude,
+      'Tu ubicación actual'
     );
+  }
+
+  async function loadFallbackWeather() {
+    const saved = loadSavedPlace();
+    if (saved) {
+      try {
+        await fetchWeather(saved.latitude, saved.longitude, saved.label);
+        return;
+      } catch {
+        // Si la localidad guardada falla, usamos Villa Ángela como respaldo final.
+      }
+    }
+
+    await fetchWeather(FALLBACK_PLACE.latitude, FALLBACK_PLACE.longitude, FALLBACK_PLACE.label);
+  }
+
+  async function bootstrapWeather() {
+    // Prioridad: ubicación real del visitante → última búsqueda manual → Villa Ángela.
+    if (navigator.geolocation) {
+      try {
+        await loadCurrentLocation();
+        return;
+      } catch {
+        // Permiso denegado, timeout o geolocalización no disponible: seguimos con fallback.
+      }
+    }
+
+    await loadFallbackWeather();
+  }
+
+  useLocationBtn?.addEventListener('click', async () => {
+    try {
+      await loadCurrentLocation();
+    } catch (error) {
+      setStatus(error?.message || 'No se pudo acceder a tu ubicación.', true);
+    }
   });
 
-  fetchWeather(-27.57, -60.72, 'Villa Ángela, Chaco')
+  bootstrapWeather()
     .catch((error) => setStatus(error.message || 'No se pudo cargar el clima.', true));
 })();
