@@ -36,27 +36,24 @@
     maxZoom: 19
   }).setView(DEFAULT_CENTER, 8);
 
-// Base satelital
-L.tileLayer(
-  'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-  {
-    maxZoom: 19,
-    attribution: 'Imagery © Esri'
-  }
-).addTo(map);
+  // Base satelital.
+  L.tileLayer(
+    'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    {
+      maxZoom: 19,
+      attribution: 'Imagery © Esri'
+    }
+  ).addTo(map);
 
-// Capa de referencia semitransparente:
-// rutas, localidades y nombres sobre el satélite
-L.tileLayer(
-  'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-  {
-    maxZoom: 19,
-    opacity: 0.55,
-    attribution: '&copy; OpenStreetMap contributors'
-  }
-).addTo(map);
-
-markersLayer.addTo(map);
+  // Referencias semitransparentes sobre el satélite.
+  L.tileLayer(
+    'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+    {
+      maxZoom: 19,
+      opacity: 0.55,
+      attribution: '&copy; OpenStreetMap contributors'
+    }
+  ).addTo(map);
 
   markersLayer.addTo(map);
 
@@ -92,11 +89,76 @@ markersLayer.addTo(map);
     return ({ weak: 'Lluvia débil', moderate: 'Lluvia moderada', strong: 'Lluvia fuerte' })[value] || 'Intensidad informada';
   }
 
+  const DEVICE_STORAGE_KEY = 'sudamericana_rain_device_id';
+
+  function randomDeviceId() {
+    if (window.crypto?.randomUUID) return window.crypto.randomUUID();
+    const bytes = new Uint8Array(24);
+    window.crypto?.getRandomValues?.(bytes);
+    const randomPart = Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('');
+    return `${Date.now().toString(36)}-${randomPart || Math.random().toString(36).slice(2).repeat(3)}`;
+  }
+
+  function readDeviceCookie() {
+    const prefix = `${DEVICE_STORAGE_KEY}=`;
+    const item = document.cookie.split(';').map(v => v.trim()).find(v => v.startsWith(prefix));
+    return item ? decodeURIComponent(item.slice(prefix.length)) : '';
+  }
+
+  function persistDeviceId(value) {
+    try { localStorage.setItem(DEVICE_STORAGE_KEY, value); } catch (_) {}
+    document.cookie = `${DEVICE_STORAGE_KEY}=${encodeURIComponent(value)}; Path=/; Max-Age=31536000; SameSite=Lax; Secure`;
+  }
+
+  function getOrCreateDeviceId() {
+    let value = '';
+    try { value = localStorage.getItem(DEVICE_STORAGE_KEY) || ''; } catch (_) {}
+    if (!value) value = readDeviceCookie();
+    if (!value || value.length < 20) {
+      value = randomDeviceId();
+      persistDeviceId(value);
+    }
+    return value;
+  }
+
+  function trustInfo(report) {
+    const status = String(report.trustStatus || '').toLowerCase();
+    const type = String(report.reporterType || '').toLowerCase();
+    if (status === 'confirmed') return { className: 'is-confirmed', label: 'Confirmado' };
+    if (status === 'unverified' || type === 'anonymous') return { className: 'is-unverified', label: 'No verificado' };
+    return { className: 'is-identified', label: 'Colaborador identificado' };
+  }
+
+  function prepareAnonymousUi() {
+    const emailInput = reportForm?.querySelector('input[name="email"]');
+    const emailField = emailInput?.closest('.rain-field');
+    if (emailInput) emailInput.required = false;
+    if (emailField) emailField.hidden = true;
+
+    const submit = reportForm?.querySelector('button[type="submit"]');
+    if (submit) submit.textContent = 'Publicar reporte';
+
+    const heroLead = document.querySelector('.rain-hero-copy .lead');
+    if (heroLead) heroLead.textContent = 'Consultá mediciones recientes y compartí cuánto llovió en tu campo o zona. Los reportes anónimos se muestran claramente como no verificados.';
+
+    const trustCards = document.querySelectorAll('.rain-trust-strip > div');
+    if (trustCards[0]) {
+      trustCards[0].innerHTML = '<strong>Reporte transparente</strong><span>Los aportes anónimos se muestran en rojo y quedan sujetos a moderación.</span>';
+    }
+
+    const intro = document.querySelector('.rain-dialog-intro');
+    if (intro) intro.textContent = 'Elegí el punto en el mapa o usá tu ubicación. Podés publicar sin crear una cuenta; el reporte se mostrará como no verificado.';
+
+    const note = document.querySelector('.rain-form-note');
+    if (note) note.textContent = 'El punto visible será aproximado. El reporte se publicará como anónimo y no verificado.';
+  }
+
   function makeRainIcon(report) {
     const ongoing = report.ongoing ? ' is-ongoing' : '';
+    const trust = trustInfo(report);
     return L.divIcon({
       className: 'rain-pin-wrap',
-      html: `<div class="rain-pin${ongoing}">${Number(report.millimeters).toLocaleString('es-AR', { maximumFractionDigits: 1 })} mm</div>`,
+      html: `<div class="rain-pin ${trust.className}${ongoing}">${Number(report.millimeters).toLocaleString('es-AR', { maximumFractionDigits: 1 })} mm</div>`,
       iconSize: [68, 42],
       iconAnchor: [14, 36],
       popupAnchor: [14, -32]
@@ -106,6 +168,7 @@ markersLayer.addTo(map);
   function popupHtml(report) {
     const place = report.placeLabel ? `<p><strong>${escapeHtml(report.placeLabel)}</strong></p>` : '';
     const comment = report.comment ? `<p>${escapeHtml(report.comment)}</p>` : '';
+    const trust = trustInfo(report);
     return `
       <div class="rain-popup">
         <div class="rain-popup-top">
@@ -118,7 +181,7 @@ markersLayer.addTo(map);
           <span>${escapeHtml(intensityLabel(report.intensity))}</span>
           ${report.ongoing ? '<span>Sigue lloviendo</span>' : '<span>Finalizada</span>'}
           ${report.measured ? '<span>Pluviómetro</span>' : '<span>Estimación</span>'}
-          <span>Email verificado</span>
+          <span class="rain-trust-badge ${trust.className}">${escapeHtml(trust.label)}</span>
         </div>
       </div>
     `;
@@ -299,14 +362,13 @@ markersLayer.addTo(map);
 
     const submit = reportForm.querySelector('button[type="submit"]');
     submit.disabled = true;
-    setStatus(reportStatus, 'Enviando código…');
+    setStatus(reportStatus, 'Publicando reporte anónimo…');
 
     try {
-      const response = await fetch(`${API_BASE}/reportes/iniciar`, {
+      const response = await fetch(`${API_BASE}/reportes/anonimo`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
         body: JSON.stringify({
-          email: formData.get('email'),
           lat: selectedPoint.lat,
           lng: selectedPoint.lng,
           millimeters: Number(formData.get('millimeters')),
@@ -315,21 +377,32 @@ markersLayer.addTo(map);
           measured: formData.get('measured') === 'on',
           comment: formData.get('comment'),
           placeLabel: formData.get('placeLabel'),
-          turnstileToken: token
+          turnstileToken: token,
+          deviceId: getOrCreateDeviceId()
         })
       });
 
       const data = await response.json().catch(() => ({}));
-      if (!response.ok || !data.ok) throw new Error(data.message || 'No se pudo iniciar el reporte.');
+      if (!response.ok || !data.ok) {
+        const wait = Number(data.retryAfterSeconds || 0);
+        const suffix = wait > 0 ? ` Podés volver a intentar en ${Math.ceil(wait / 60)} min.` : '';
+        throw new Error(`${data.message || 'No se pudo publicar el reporte.'}${suffix}`);
+      }
 
-      pendingReportId = data.pendingId;
-      maskedEmailEl.textContent = data.maskedEmail || 'tu email';
-      closeReport();
-      verifyDialog.showModal();
-      verifyForm.querySelector('input[name="code"]')?.focus();
-      setStatus(verifyStatus, '');
+      setStatus(reportStatus, 'Reporte anónimo publicado correctamente.', 'ok');
+      mapStatus.textContent = 'Reporte anónimo publicado · marcado en rojo como no verificado.';
+
+      setTimeout(() => {
+        closeReport();
+        reportForm.reset();
+        selectedPoint = null;
+        if (pickedMarker) { pickedMarker.remove(); pickedMarker = null; }
+        selectedLocationEl.textContent = 'Sin seleccionar';
+        if (window.turnstile && turnstileWidgetId !== null) window.turnstile.reset(turnstileWidgetId);
+        loadReports({ fit: false });
+      }, 900);
     } catch (error) {
-      setStatus(reportStatus, error.message || 'No se pudo enviar el código.', 'error');
+      setStatus(reportStatus, error.message || 'No se pudo publicar el reporte.', 'error');
       if (window.turnstile && turnstileWidgetId !== null) window.turnstile.reset(turnstileWidgetId);
     } finally {
       submit.disabled = false;
@@ -382,6 +455,8 @@ markersLayer.addTo(map);
     }, 500);
   });
 
+  prepareAnonymousUi();
+  getOrCreateDeviceId();
   loadReports({ fit: false });
   setInterval(() => loadReports(), 120000);
 })();
