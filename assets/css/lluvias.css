@@ -303,3 +303,6 @@
   .rain-dialog-card { min-height: 100vh; max-height: 100vh; border-radius: 0; }
   .rain-dialog-actions { position: sticky; bottom: 0; background: var(--paper-2); padding-top: 12px; }
 }
+.rain-field[hidden] {
+  display: none !important;
+}
