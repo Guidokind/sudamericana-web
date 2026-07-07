@@ -33,13 +33,16 @@
   const map = L.map(mapEl, {
     zoomControl: true,
     minZoom: 4,
-    maxZoom: 18
+    maxZoom: 19
   }).setView(DEFAULT_CENTER, 8);
 
-  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+ L.tileLayer(
+  'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+  {
     maxZoom: 19,
-    attribution: '&copy; OpenStreetMap contributors'
-  }).addTo(map);
+    attribution: 'Imagery © Esri'
+  }
+).addTo(map);
 
   markersLayer.addTo(map);
 
