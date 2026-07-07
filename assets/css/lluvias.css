@@ -24,7 +24,7 @@
 .rain-workspace { padding: 18px 0 88px; }
 .rain-toolbar {
   display: flex;
-  align-items: end;
+  align-items: end;a
   justify-content: space-between;
   gap: 24px;
   margin-bottom: 18px;
@@ -132,7 +132,10 @@
   white-space: nowrap;
   transform: rotate(-4deg);
 }
-.rain-pin.is-ongoing { background: #315f83; }
+.rain-pin.is-unverified { background: #b42318; }
+.rain-pin.is-identified { background: #315f83; }
+.rain-pin.is-confirmed { background: var(--green-dark); }
+.rain-pin.is-ongoing:not(.is-unverified):not(.is-identified):not(.is-confirmed) { background: #315f83; }
 .rain-popup { min-width: 210px; }
 .rain-popup-top {
   display: flex;
@@ -156,6 +159,24 @@
   padding: 5px 8px;
   font-size: .72rem;
   color: #514b45;
+}
+.rain-popup-meta .rain-trust-badge.is-unverified {
+  background: #fde8e7;
+  color: #9f1d16;
+  border: 1px solid rgba(180,35,24,.18);
+  font-weight: 800;
+}
+.rain-popup-meta .rain-trust-badge.is-identified {
+  background: #e8f0f8;
+  color: #244f72;
+  border: 1px solid rgba(49,95,131,.18);
+  font-weight: 800;
+}
+.rain-popup-meta .rain-trust-badge.is-confirmed {
+  background: #e6f1e7;
+  color: var(--green-dark);
+  border: 1px solid rgba(66,111,69,.18);
+  font-weight: 800;
 }
 
 .rain-dialog {
