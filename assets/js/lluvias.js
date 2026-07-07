@@ -51,7 +51,7 @@ L.tileLayer(
   'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
   {
     maxZoom: 19,
-    opacity: 0.75,
+    opacity: 0.55,
     attribution: '&copy; OpenStreetMap contributors'
   }
 ).addTo(map);
