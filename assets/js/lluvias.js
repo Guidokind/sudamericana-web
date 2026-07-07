@@ -24,6 +24,7 @@
   let pickedMarker = null;
   let pickMode = false;
   let pendingReportId = null;
+  let submissionMode = 'anonymous';
   let turnstileWidgetId = null;
   let markersLayer = L.layerGroup();
   let loadController = null;
@@ -129,28 +130,70 @@
     return { className: 'is-identified', label: 'Colaborador identificado' };
   }
 
-  function prepareAnonymousUi() {
+  function setSubmissionMode(mode) {
+    submissionMode = mode === 'email' ? 'email' : 'anonymous';
+
     const emailInput = reportForm?.querySelector('input[name="email"]');
     const emailField = emailInput?.closest('.rain-field');
-    if (emailInput) emailInput.required = false;
-    if (emailField) emailField.hidden = true;
-
     const submit = reportForm?.querySelector('button[type="submit"]');
-    if (submit) submit.textContent = 'Publicar reporte';
+    const choiceButton = reportForm?.querySelector('[data-verification-choice]');
+    const choiceText = reportForm?.querySelector('[data-verification-choice-text]');
+    const note = document.querySelector('.rain-form-note');
 
+    const wantsEmail = submissionMode === 'email';
+
+    if (emailInput) emailInput.required = wantsEmail;
+    if (emailField) emailField.hidden = !wantsEmail;
+
+    if (submit) submit.textContent = wantsEmail ? 'Enviar código' : 'Publicar reporte';
+    if (choiceButton) choiceButton.textContent = wantsEmail ? 'Publicar anónimo' : 'Verificar con email';
+    if (choiceText) {
+      choiceText.textContent = wantsEmail
+        ? 'Se enviará un código de 6 dígitos para identificar tu aporte.'
+        : 'Opcional: identificá tu aporte verificando un email.';
+    }
+
+    if (note) {
+      note.textContent = wantsEmail
+        ? 'El punto visible será aproximado. Tu email no se mostrará públicamente.'
+        : 'El punto visible será aproximado. El reporte se publicará como anónimo y no verificado.';
+    }
+
+    setStatus(reportStatus, '');
+  }
+
+  function prepareSubmissionUi() {
     const heroLead = document.querySelector('.rain-hero-copy .lead');
     if (heroLead) heroLead.textContent = 'Consultá mediciones recientes y compartí cuánto llovió en tu campo o zona. Los reportes anónimos se muestran claramente como no verificados.';
 
     const trustCards = document.querySelectorAll('.rain-trust-strip > div');
     if (trustCards[0]) {
-      trustCards[0].innerHTML = '<strong>Reporte transparente</strong><span>Los aportes anónimos se muestran en rojo y quedan sujetos a moderación.</span>';
+      trustCards[0].innerHTML = '<strong>Reporte transparente</strong><span>Los aportes anónimos se muestran en rojo; quien quiera puede identificar su aporte por email.</span>';
     }
 
     const intro = document.querySelector('.rain-dialog-intro');
-    if (intro) intro.textContent = 'Elegí el punto en el mapa o usá tu ubicación. Podés publicar sin crear una cuenta; el reporte se mostrará como no verificado.';
+    if (intro) intro.textContent = 'Elegí el punto en el mapa o usá tu ubicación. Podés publicar sin crear una cuenta o identificar voluntariamente tu aporte por email.';
 
-    const note = document.querySelector('.rain-form-note');
-    if (note) note.textContent = 'El punto visible será aproximado. El reporte se publicará como anónimo y no verificado.';
+    const turnstileHost = reportForm?.querySelector('[data-turnstile-host]');
+    if (turnstileHost && !reportForm.querySelector('[data-verification-choice-wrap]')) {
+      const wrap = document.createElement('div');
+      wrap.className = 'rain-verification-choice';
+      wrap.dataset.verificationChoiceWrap = '';
+      wrap.innerHTML = `
+        <div>
+          <strong>Identificación opcional</strong>
+          <span data-verification-choice-text>Opcional: identificá tu aporte verificando un email.</span>
+        </div>
+        <button class="btn btn-secondary btn-small" type="button" data-verification-choice>Verificar con email</button>
+      `;
+      turnstileHost.insertAdjacentElement('afterend', wrap);
+
+      wrap.querySelector('[data-verification-choice]')?.addEventListener('click', () => {
+        setSubmissionMode(submissionMode === 'anonymous' ? 'email' : 'anonymous');
+      });
+    }
+
+    setSubmissionMode('anonymous');
   }
 
   function makeRainIcon(report) {
@@ -360,33 +403,60 @@
       return;
     }
 
+    if (submissionMode === 'email') {
+      const email = String(formData.get('email') || '').trim();
+      if (!email) {
+        setStatus(reportStatus, 'Ingresá un email para identificar el aporte.', 'error');
+        return;
+      }
+    }
+
     const submit = reportForm.querySelector('button[type="submit"]');
     submit.disabled = true;
-    setStatus(reportStatus, 'Publicando reporte anónimo…');
+    setStatus(reportStatus, submissionMode === 'email' ? 'Enviando código…' : 'Publicando reporte anónimo…');
 
     try {
-      const response = await fetch(`${API_BASE}/reportes/anonimo`, {
+      const isEmailMode = submissionMode === 'email';
+      const endpoint = isEmailMode ? '/reportes/iniciar' : '/reportes/anonimo';
+      const payload = {
+        lat: selectedPoint.lat,
+        lng: selectedPoint.lng,
+        millimeters: Number(formData.get('millimeters')),
+        intensity: formData.get('intensity'),
+        ongoing: formData.get('ongoing') === 'on',
+        measured: formData.get('measured') === 'on',
+        comment: formData.get('comment'),
+        placeLabel: formData.get('placeLabel'),
+        turnstileToken: token
+      };
+
+      if (isEmailMode) payload.email = String(formData.get('email') || '').trim();
+      else payload.deviceId = getOrCreateDeviceId();
+
+      const response = await fetch(`${API_BASE}${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-        body: JSON.stringify({
-          lat: selectedPoint.lat,
-          lng: selectedPoint.lng,
-          millimeters: Number(formData.get('millimeters')),
-          intensity: formData.get('intensity'),
-          ongoing: formData.get('ongoing') === 'on',
-          measured: formData.get('measured') === 'on',
-          comment: formData.get('comment'),
-          placeLabel: formData.get('placeLabel'),
-          turnstileToken: token,
-          deviceId: getOrCreateDeviceId()
-        })
+        body: JSON.stringify(payload)
       });
 
       const data = await response.json().catch(() => ({}));
       if (!response.ok || !data.ok) {
         const wait = Number(data.retryAfterSeconds || 0);
         const suffix = wait > 0 ? ` Podés volver a intentar en ${Math.ceil(wait / 60)} min.` : '';
-        throw new Error(`${data.message || 'No se pudo publicar el reporte.'}${suffix}`);
+        throw new Error(`${data.message || 'No se pudo procesar el reporte.'}${suffix}`);
+      }
+
+      if (isEmailMode) {
+        pendingReportId = data.pendingId;
+        if (maskedEmailEl) maskedEmailEl.textContent = data.maskedEmail || 'tu email';
+        setStatus(reportStatus, 'Código enviado. Revisá tu email.', 'ok');
+
+        if (window.turnstile && turnstileWidgetId !== null) window.turnstile.reset(turnstileWidgetId);
+        closeReport();
+        verifyDialog.showModal();
+        setStatus(verifyStatus, '');
+        verifyForm?.querySelector('input[name="code"]')?.focus();
+        return;
       }
 
       setStatus(reportStatus, 'Reporte anónimo publicado correctamente.', 'ok');
@@ -395,6 +465,7 @@
       setTimeout(() => {
         closeReport();
         reportForm.reset();
+        setSubmissionMode('anonymous');
         selectedPoint = null;
         if (pickedMarker) { pickedMarker.remove(); pickedMarker = null; }
         selectedLocationEl.textContent = 'Sin seleccionar';
@@ -402,7 +473,7 @@
         loadReports({ fit: false });
       }, 900);
     } catch (error) {
-      setStatus(reportStatus, error.message || 'No se pudo publicar el reporte.', 'error');
+      setStatus(reportStatus, error.message || 'No se pudo procesar el reporte.', 'error');
       if (window.turnstile && turnstileWidgetId !== null) window.turnstile.reset(turnstileWidgetId);
     } finally {
       submit.disabled = false;
@@ -432,6 +503,7 @@
         verifyForm.reset();
         reportForm.reset();
         pendingReportId = null;
+        setSubmissionMode('anonymous');
         selectedPoint = null;
         if (pickedMarker) { pickedMarker.remove(); pickedMarker = null; }
         selectedLocationEl.textContent = 'Sin seleccionar';
@@ -455,7 +527,7 @@
     }, 500);
   });
 
-  prepareAnonymousUi();
+  prepareSubmissionUi();
   getOrCreateDeviceId();
   loadReports({ fit: false });
   setInterval(() => loadReports(), 120000);
