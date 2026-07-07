@@ -36,13 +36,27 @@
     maxZoom: 19
   }).setView(DEFAULT_CENTER, 8);
 
- L.tileLayer(
+// Base satelital
+L.tileLayer(
   'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
   {
     maxZoom: 19,
     attribution: 'Imagery © Esri'
   }
 ).addTo(map);
+
+// Capa de referencia semitransparente:
+// rutas, localidades y nombres sobre el satélite
+L.tileLayer(
+  'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+  {
+    maxZoom: 19,
+    opacity: 0.38,
+    attribution: '&copy; OpenStreetMap contributors'
+  }
+).addTo(map);
+
+markersLayer.addTo(map);
 
   markersLayer.addTo(map);
 
