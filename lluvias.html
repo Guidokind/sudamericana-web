@@ -175,12 +175,26 @@
         <button class="rain-close" type="button" data-close-report aria-label="Cerrar">×</button>
       </div>
 
-      <p class="rain-dialog-intro">Elegí el punto en el mapa o usá tu ubicación. Recomendamos informar milímetros medidos con pluviómetro.</p>
+      <p class="rain-dialog-intro">Buscá una dirección, elegí el punto en el mapa o usá tu ubicación. Siempre revisá el pin antes de publicar.</p>
+
+      <div class="rain-address-block">
+        <label class="rain-field">
+          <span>Buscar dirección, calle o lugar <small>(opcional)</small></span>
+          <div class="rain-search-row">
+            <input class="input" type="search" data-address-search placeholder="Ej. San Martín 742, Villa Ángela">
+            <button class="btn btn-secondary" type="button" data-search-address>Buscar</button>
+          </div>
+        </label>
+        <p class="rain-form-status rain-inline-status" data-address-status aria-live="polite"></p>
+        <div class="rain-geocode-results" data-address-results hidden></div>
+        <small class="rain-map-attribution">Direcciones: © OpenStreetMap contributors</small>
+      </div>
 
       <div class="rain-location-box">
         <div>
           <small>Ubicación seleccionada</small>
           <strong data-selected-location>Sin seleccionar</strong>
+          <small class="rain-location-confidence" data-location-confidence></small>
         </div>
         <div class="rain-location-actions">
           <button class="btn btn-secondary btn-small" type="button" data-dialog-location>Usar mi ubicación</button>

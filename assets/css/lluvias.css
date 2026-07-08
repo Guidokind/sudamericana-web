@@ -808,3 +808,83 @@
   }
 }
 
+/* Ubicación, geocodificación y edición rápida de reportes */
+.rain-address-block {
+  margin: 18px 0 12px;
+  padding: 15px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: rgba(255,255,255,.42);
+}
+.rain-search-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+.rain-inline-status { margin: 7px 0 0; min-height: 18px; font-size: .8rem; }
+.rain-map-attribution { display: block; margin-top: 8px; color: var(--ink-soft); font-size: .72rem; }
+.rain-geocode-results,
+.rain-autocomplete-list {
+  display: grid;
+  gap: 5px;
+  margin-top: 8px;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--paper-2);
+  box-shadow: 0 16px 40px rgba(26,22,18,.12);
+  max-height: 240px;
+  overflow: auto;
+  position: relative;
+  z-index: 20;
+}
+.rain-geocode-results[hidden],
+.rain-autocomplete-list[hidden] { display: none !important; }
+.rain-geocode-option,
+.rain-autocomplete-list button {
+  width: 100%;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--ink);
+  text-align: left;
+  padding: 10px 11px;
+  cursor: pointer;
+  font: inherit;
+  line-height: 1.35;
+}
+.rain-geocode-option:hover,
+.rain-autocomplete-list button:hover,
+.rain-autocomplete-list button.is-active { background: rgba(66,111,69,.09); }
+.rain-autocomplete { position: relative; }
+.rain-autocomplete-list { position: absolute; left: 0; right: 0; top: calc(100% + 4px); margin-top: 0; }
+.rain-autocomplete-list button { display: grid; gap: 2px; }
+.rain-autocomplete-list button span { color: var(--ink-soft); font-size: .78rem; }
+.rain-location-confidence { display: block; margin-top: 5px; color: var(--ink-soft); font-weight: 500; }
+.rain-location-confidence.is-warning { color: #9d6216; }
+.rain-picked-marker.is-edit { background: #315f83; }
+.rain-my-reports-block { margin-top: 20px; }
+.rain-my-reports-list { display: grid; gap: 8px; }
+.rain-own-report {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 13px 14px;
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  background: rgba(255,255,255,.5);
+}
+.rain-own-report > div:first-child { min-width: 0; display: grid; gap: 3px; }
+.rain-own-report > div:first-child span { color: var(--ink-soft); font-size: .78rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rain-own-report-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.rain-edit-closed { color: var(--ink-soft); font-size: .76rem; }
+.rain-edit-report-card { max-width: 760px; margin: 0 auto; }
+
+@media (max-width: 620px) {
+  .rain-search-row { grid-template-columns: 1fr; }
+  .rain-search-row .btn { width: 100%; justify-content: center; }
+  .rain-own-report { grid-template-columns: 1fr; }
+  .rain-own-report-meta { justify-content: flex-start; }
+}
+

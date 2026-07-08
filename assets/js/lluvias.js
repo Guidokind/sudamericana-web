@@ -18,11 +18,24 @@
   const mapStatus = document.querySelector('[data-map-status]');
   const countEl = document.querySelector('[data-report-count]');
   const maskedEmailEl = document.querySelector('[data-masked-email]');
+  const locationConfidenceEl = document.querySelector('[data-location-confidence]');
+  const addressInput = document.querySelector('[data-address-search]');
+  const addressResultsEl = document.querySelector('[data-address-results]');
+  const addressStatusEl = document.querySelector('[data-address-status]');
 
   let hours = 24;
   let selectedPoint = null;
+  let selectedLocationMeta = { source: 'map', accuracyM: null, inputLabel: '' };
   let pickedMarker = null;
   let pickMode = false;
+  let editPickMode = false;
+  let editPickedMarker = null;
+  let editingReport = null;
+  let editSelectedPoint = null;
+  let editSelectedLocationMeta = { source: 'map', accuracyM: null, inputLabel: '' };
+  let myReportsCache = [];
+  let localitySearchController = null;
+  let localityDebounceTimer = null;
   let pendingReportId = null;
   let submissionMode = 'anonymous';
   let reportTurnstileWidgetId = null;
@@ -256,11 +269,39 @@
     }
   }
 
-  function setSelectedPoint(lat, lng, source = 'Mapa') {
-    selectedPoint = { lat: Number(lat), lng: Number(lng) };
-    if (selectedLocationEl) {
-      selectedLocationEl.textContent = `${source} · ${selectedPoint.lat.toFixed(5)}, ${selectedPoint.lng.toFixed(5)}`;
+  function locationAccuracyText(accuracyM) {
+    if (accuracyM === null || accuracyM === undefined || accuracyM === '') return 'Revisá el pin antes de publicar.';
+    const accuracy = Number(accuracyM);
+    if (!Number.isFinite(accuracy) || accuracy < 0) return 'Revisá el pin antes de publicar.';
+    if (accuracy <= 50) return `Precisión estimada alta · ± ${Math.round(accuracy)} m`;
+    if (accuracy <= 500) return `Precisión estimada media · ± ${Math.round(accuracy)} m`;
+    if (accuracy <= 5000) return `Ubicación aproximada · ± ${(accuracy / 1000).toFixed(1)} km`;
+    return `Precisión baja · ± ${Math.round(accuracy / 1000)} km. Recomendamos corregir en mapa o buscar una dirección.`;
+  }
+
+  function renderSelectedLocation(label = '') {
+    if (selectedLocationEl && selectedPoint) {
+      selectedLocationEl.textContent = label || selectedLocationMeta.inputLabel
+        || `${selectedPoint.lat.toFixed(5)}, ${selectedPoint.lng.toFixed(5)}`;
     }
+    if (locationConfidenceEl) {
+      locationConfidenceEl.textContent = selectedPoint
+        ? locationAccuracyText(selectedLocationMeta.accuracyM)
+        : '';
+      locationConfidenceEl.classList.toggle('is-warning', Number(selectedLocationMeta.accuracyM) > 1000);
+    }
+  }
+
+  function setSelectedPoint(lat, lng, source = 'Mapa', options = {}) {
+    selectedPoint = { lat: Number(lat), lng: Number(lng) };
+    selectedLocationMeta = {
+      source: options.locationSource || (source === 'Mi ubicación' ? 'geolocation' : source === 'Dirección' ? 'address' : 'map'),
+      accuracyM: options.accuracyM === null || options.accuracyM === undefined || options.accuracyM === ''
+        ? null
+        : Number.isFinite(Number(options.accuracyM)) ? Number(options.accuracyM) : null,
+      inputLabel: String(options.inputLabel || options.label || '').trim()
+    };
+    renderSelectedLocation(options.label || `${source} · ${selectedPoint.lat.toFixed(5)}, ${selectedPoint.lng.toFixed(5)}`);
 
     if (pickedMarker) pickedMarker.remove();
     pickedMarker = L.marker([selectedPoint.lat, selectedPoint.lng], {
@@ -271,6 +312,17 @@
         iconAnchor: [10, 10]
       })
     }).addTo(map);
+  }
+
+  async function reverseLookupSelectedPoint(lat, lng) {
+    try {
+      const data = await apiFetch(`/geocodificar-reversa?lat=${encodeURIComponent(lat)}&lng=${encodeURIComponent(lng)}`);
+      const label = String(data.result?.label || '').trim();
+      if (!label || !selectedPoint) return;
+      if (Math.abs(selectedPoint.lat - Number(lat)) > 1e-7 || Math.abs(selectedPoint.lng - Number(lng)) > 1e-7) return;
+      selectedLocationMeta.inputLabel = label;
+      renderSelectedLocation(label);
+    } catch (_) {}
   }
 
   function requestLocation({ openDialog = false } = {}) {
@@ -285,16 +337,84 @@
 
     navigator.geolocation.getCurrentPosition(
       pos => {
-        const { latitude, longitude } = pos.coords;
-        map.setView([latitude, longitude], 12);
-        setSelectedPoint(latitude, longitude, 'Mi ubicación');
-        setStatus(target, openDialog ? 'Ubicación seleccionada.' : 'Mostrando tu zona.', 'ok');
+        const { latitude, longitude, accuracy } = pos.coords;
+        map.setView([latitude, longitude], Number(accuracy) > 5000 ? 9 : 13);
+        setSelectedPoint(latitude, longitude, 'Mi ubicación', {
+          locationSource: 'geolocation',
+          accuracyM: accuracy,
+          label: 'Ubicación detectada'
+        });
+        setStatus(
+          target,
+          Number(accuracy) > 1000
+            ? 'Ubicación aproximada. Revisá el pin o buscá una dirección antes de publicar.'
+            : 'Ubicación detectada. Revisá el pin antes de publicar.',
+          Number(accuracy) > 1000 ? 'error' : 'ok'
+        );
+        reverseLookupSelectedPoint(latitude, longitude);
         if (openDialog && reportDialog && !reportDialog.open) reportDialog.showModal();
         loadReports();
       },
-      () => setStatus(target, 'No se pudo obtener la ubicación. Podés elegir un punto en el mapa.', 'error'),
+      () => setStatus(target, 'No se pudo obtener la ubicación. Buscá una dirección o elegí un punto en el mapa.', 'error'),
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 120000 }
     );
+  }
+
+  function renderAddressResults(results, { edit = false } = {}) {
+    const host = edit
+      ? document.querySelector('[data-edit-address-results]')
+      : addressResultsEl;
+    if (!host) return;
+    host.innerHTML = '';
+    host.hidden = !results.length;
+
+    for (const result of results) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'rain-geocode-option';
+      button.textContent = result.label;
+      button.addEventListener('click', () => {
+        if (edit) {
+          setEditSelectedPoint(result.lat, result.lng, {
+            source: 'address', accuracyM: null, inputLabel: result.label, label: result.label
+          });
+          map.setView([result.lat, result.lng], 16);
+          document.querySelector('[data-edit-address-results]').hidden = true;
+        } else {
+          setSelectedPoint(result.lat, result.lng, 'Dirección', {
+            locationSource: 'address', accuracyM: null, inputLabel: result.label, label: result.label
+          });
+          map.setView([result.lat, result.lng], 16);
+          host.hidden = true;
+          setStatus(addressStatusEl, 'Dirección seleccionada. Revisá el pin antes de publicar.', 'ok');
+        }
+      });
+      host.appendChild(button);
+    }
+  }
+
+  async function searchAddress({ edit = false } = {}) {
+    const input = edit
+      ? document.querySelector('[data-edit-address-search]')
+      : addressInput;
+    const status = edit
+      ? document.querySelector('[data-edit-address-status]')
+      : addressStatusEl;
+    const q = String(input?.value || '').trim();
+    if (q.length < 3) {
+      setStatus(status, 'Escribí una calle, número, barrio o lugar.', 'error');
+      return;
+    }
+
+    setStatus(status, 'Buscando dirección…');
+    try {
+      const data = await apiFetch(`/geocodificar-direccion?q=${encodeURIComponent(q)}`);
+      const results = Array.isArray(data.results) ? data.results : [];
+      renderAddressResults(results, { edit });
+      setStatus(status, results.length ? 'Elegí una opción.' : 'No encontramos coincidencias.', results.length ? '' : 'error');
+    } catch (error) {
+      setStatus(status, error.message || 'No se pudo buscar la dirección.', 'error');
+    }
   }
 
   function turnstileResponse(widgetId) {
@@ -482,11 +602,15 @@
   function clearReportFormAfterSuccess() {
     reportForm?.reset();
     selectedPoint = null;
+    selectedLocationMeta = { source: 'map', accuracyM: null, inputLabel: '' };
     if (pickedMarker) {
       pickedMarker.remove();
       pickedMarker = null;
     }
     if (selectedLocationEl) selectedLocationEl.textContent = 'Sin seleccionar';
+    if (locationConfidenceEl) locationConfidenceEl.textContent = '';
+    if (addressInput) addressInput.value = '';
+    if (addressResultsEl) { addressResultsEl.innerHTML = ''; addressResultsEl.hidden = true; }
     setSubmissionMode(currentUser?.profileCompleted ? 'registered' : 'anonymous');
     resetReportTurnstile();
   }
@@ -518,8 +642,17 @@
   }
 
   map.on('click', event => {
+    if (editPickMode) {
+      setEditSelectedPoint(event.latlng.lat, event.latlng.lng, {
+        source: 'map', accuracyM: null, inputLabel: '', label: 'Punto corregido en mapa'
+      });
+      editPickMode = false;
+      document.body.classList.remove('rain-pick-mode');
+      document.querySelector('[data-edit-report-dialog]')?.showModal();
+      return;
+    }
     if (!pickMode) return;
-    setSelectedPoint(event.latlng.lat, event.latlng.lng, 'Punto elegido');
+    setSelectedPoint(event.latlng.lat, event.latlng.lng, 'Punto elegido', { locationSource: 'map' });
     pickMode = false;
     document.body.classList.remove('rain-pick-mode');
     openReport();
@@ -599,6 +732,13 @@
   document.querySelector('[data-use-location]')?.addEventListener('click', () => requestLocation({ openDialog: false }));
   document.querySelector('[data-share-rain]')?.addEventListener('click', event => shareRainPage(event.currentTarget));
   document.querySelector('[data-dialog-location]')?.addEventListener('click', () => requestLocation({ openDialog: true }));
+  document.querySelector('[data-search-address]')?.addEventListener('click', () => searchAddress());
+  addressInput?.addEventListener('keydown', event => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      searchAddress();
+    }
+  });
   document.querySelector('[data-pick-map]')?.addEventListener('click', enterPickMode);
 
   reportDialog?.addEventListener('click', event => {
@@ -660,6 +800,9 @@
         measured: formData.get('measured') === 'on',
         comment: formData.get('comment'),
         placeLabel: formData.get('placeLabel'),
+        locationSource: selectedLocationMeta.source,
+        locationAccuracyM: selectedLocationMeta.accuracyM,
+        locationInputLabel: selectedLocationMeta.inputLabel,
         turnstileToken: token
       };
 
@@ -701,6 +844,7 @@
         if (effectiveMode === 'registered') {
           await refreshSession({ silent: true });
           await loadRanking({ silent: true });
+          await loadMyReports({ silent: true });
         }
       }, 800);
     } catch (error) {
@@ -881,9 +1025,13 @@
                 <input class="input" type="text" name="displayName" minlength="2" maxlength="60" required placeholder="Juan">
               </label>
 
-              <label class="rain-field rain-field-wide">
+              <label class="rain-field rain-field-wide rain-autocomplete-field">
                 <span>Localidad <small>(opcional)</small></span>
-                <input class="input" type="text" name="locality" maxlength="80" placeholder="Villa Ángela">
+                <div class="rain-autocomplete">
+                  <input class="input" type="text" name="locality" maxlength="80" autocomplete="off" data-profile-locality placeholder="Villa Ángela">
+                  <div class="rain-autocomplete-list" data-locality-suggestions hidden></div>
+                </div>
+                <small>Podés elegir una ciudad sugerida o escribir manualmente una colonia o paraje.</small>
               </label>
             </div>
 
@@ -915,6 +1063,78 @@
               <button class="btn btn-secondary rain-danger-text" type="button" data-logout>Cerrar sesión</button>
             </div>
           </div>
+        </dialog>
+
+        <dialog class="rain-dialog" data-edit-report-dialog aria-labelledby="edit-report-title">
+          <form class="rain-dialog-card rain-edit-report-card" data-edit-report-form>
+            <div class="rain-dialog-head">
+              <div>
+                <span class="eyebrow">Corrección rápida</span>
+                <h2 id="edit-report-title">Editar reporte</h2>
+              </div>
+              <button class="rain-close" type="button" data-close-edit-report aria-label="Cerrar">×</button>
+            </div>
+            <p class="rain-dialog-intro" data-edit-report-intro>Podés corregir este reporte durante 15 minutos desde su publicación.</p>
+
+            <div class="rain-address-block">
+              <label class="rain-field">
+                <span>Corregir dirección o lugar <small>(opcional)</small></span>
+                <div class="rain-search-row">
+                  <input class="input" type="search" data-edit-address-search placeholder="Ej. San Martín 742, Villa Ángela">
+                  <button class="btn btn-secondary" type="button" data-edit-search-address>Buscar</button>
+                </div>
+              </label>
+              <p class="rain-form-status rain-inline-status" data-edit-address-status aria-live="polite"></p>
+              <div class="rain-geocode-results" data-edit-address-results hidden></div>
+            </div>
+
+            <div class="rain-location-box">
+              <div>
+                <small>Ubicación del reporte</small>
+                <strong data-edit-selected-location>Sin seleccionar</strong>
+                <small class="rain-location-confidence" data-edit-location-confidence></small>
+              </div>
+              <div class="rain-location-actions">
+                <button class="btn btn-secondary btn-small" type="button" data-edit-use-location>Usar mi ubicación</button>
+                <button class="btn btn-secondary btn-small" type="button" data-edit-pick-map>Elegir en mapa</button>
+              </div>
+            </div>
+
+            <div class="rain-form-grid">
+              <label class="rain-field">
+                <span>Milímetros</span>
+                <div class="rain-mm-input">
+                  <input class="input" type="number" name="millimeters" inputmode="decimal" min="0.1" max="500" step="0.1" required>
+                  <span>mm</span>
+                </div>
+              </label>
+              <label class="rain-field">
+                <span>Intensidad observada</span>
+                <select class="input" name="intensity" required>
+                  <option value="weak">Débil</option>
+                  <option value="moderate">Moderada</option>
+                  <option value="strong">Fuerte</option>
+                </select>
+              </label>
+              <label class="rain-field rain-field-wide">
+                <span>Referencia de zona <small>(opcional)</small></span>
+                <input class="input" type="text" name="placeLabel" maxlength="100">
+              </label>
+            </div>
+            <div class="rain-checks">
+              <label><input type="checkbox" name="ongoing"> Sigue lloviendo</label>
+              <label><input type="checkbox" name="measured"> Medido con pluviómetro</label>
+            </div>
+            <label class="rain-field">
+              <span>Comentario breve <small>(opcional)</small></span>
+              <textarea class="input rain-textarea" name="comment" maxlength="220" rows="3"></textarea>
+            </label>
+            <p class="rain-form-status" data-edit-report-status aria-live="polite"></p>
+            <div class="rain-dialog-actions">
+              <button class="btn btn-secondary" type="button" data-close-edit-report>Cancelar</button>
+              <button class="btn btn-primary" type="submit">Guardar corrección</button>
+            </div>
+          </form>
         </dialog>
 
         <dialog class="rain-dialog" data-ranking-dialog aria-labelledby="ranking-title">
@@ -989,6 +1209,23 @@
 
     const profileForm = document.querySelector('[data-profile-form]');
     profileForm?.addEventListener('submit', saveProfile);
+    bindLocalityAutocomplete();
+
+    document.querySelectorAll('[data-close-edit-report]').forEach(el => el.addEventListener('click', () => {
+      document.querySelector('[data-edit-report-dialog]')?.close();
+    }));
+    document.querySelector('[data-edit-search-address]')?.addEventListener('click', () => searchAddress({ edit: true }));
+    document.querySelector('[data-edit-address-search]')?.addEventListener('keydown', event => {
+      if (event.key === 'Enter') { event.preventDefault(); searchAddress({ edit: true }); }
+    });
+    document.querySelector('[data-edit-use-location]')?.addEventListener('click', requestEditLocation);
+    document.querySelector('[data-edit-pick-map]')?.addEventListener('click', enterEditPickMode);
+    document.querySelector('[data-edit-report-form]')?.addEventListener('submit', saveEditedReport);
+
+    document.querySelector('[data-account-content]')?.addEventListener('click', event => {
+      const button = event.target.closest('[data-edit-own-report]');
+      if (button) openEditReport(button.dataset.editOwnReport);
+    });
 
     document.querySelectorAll('dialog[data-auth-dialog], dialog[data-auth-code-dialog], dialog[data-account-dialog], dialog[data-ranking-dialog]').forEach(dialog => {
       dialog.addEventListener('click', event => {
@@ -1210,6 +1447,81 @@
     return currentUser;
   }
 
+  function localityLabel(item) {
+    return [item.name, item.admin1, item.country].filter(Boolean).join(' · ');
+  }
+
+  function bindLocalityAutocomplete() {
+    const input = document.querySelector('[data-profile-locality]');
+    const host = document.querySelector('[data-locality-suggestions]');
+    if (!input || !host || input.dataset.autocompleteBound === '1') return;
+    input.dataset.autocompleteBound = '1';
+
+    let activeIndex = -1;
+    let items = [];
+
+    const close = () => {
+      host.hidden = true;
+      activeIndex = -1;
+      host.querySelectorAll('button').forEach(button => button.classList.remove('is-active'));
+    };
+
+    const select = index => {
+      const item = items[index];
+      if (!item) return;
+      input.value = [item.name, item.admin1].filter(Boolean).join(', ');
+      close();
+    };
+
+    input.addEventListener('input', () => {
+      clearTimeout(localityDebounceTimer);
+      localitySearchController?.abort();
+      const q = input.value.trim();
+      if (q.length < 3) { items = []; host.innerHTML = ''; close(); return; }
+
+      localityDebounceTimer = setTimeout(async () => {
+        localitySearchController = new AbortController();
+        try {
+          const endpoint = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=6&language=es&format=json`;
+          const response = await fetch(endpoint, { signal: localitySearchController.signal });
+          if (!response.ok) throw new Error('No se pudieron buscar localidades.');
+          const data = await response.json();
+          items = Array.isArray(data.results) ? data.results : [];
+          host.innerHTML = '';
+          for (const [index, item] of items.entries()) {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.innerHTML = `<strong>${escapeHtml(item.name || '')}</strong><span>${escapeHtml([item.admin1, item.country].filter(Boolean).join(' · '))}</span>`;
+            button.addEventListener('mousedown', event => event.preventDefault());
+            button.addEventListener('click', () => select(index));
+            host.appendChild(button);
+          }
+          host.hidden = !items.length;
+          activeIndex = -1;
+        } catch (error) {
+          if (error.name !== 'AbortError') { items = []; host.innerHTML = ''; close(); }
+        }
+      }, 300);
+    });
+
+    input.addEventListener('keydown', event => {
+      if (host.hidden || !items.length) return;
+      if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+        event.preventDefault();
+        activeIndex = event.key === 'ArrowDown'
+          ? (activeIndex + 1) % items.length
+          : (activeIndex - 1 + items.length) % items.length;
+        host.querySelectorAll('button').forEach((button, index) => button.classList.toggle('is-active', index === activeIndex));
+      } else if (event.key === 'Enter' && activeIndex >= 0) {
+        event.preventDefault(); select(activeIndex);
+      } else if (event.key === 'Escape') {
+        close();
+      }
+    });
+
+    input.addEventListener('blur', () => setTimeout(close, 120));
+  }
+
   function openProfileDialog({ required = false } = {}) {
     if (!currentUser) {
       openAuthDialog();
@@ -1318,6 +1630,13 @@
         </div>
       </div>
 
+      <div class="rain-my-reports-block">
+        <div class="rain-subhead"><strong>Mis reportes recientes</strong><span>15 min para corregir</span></div>
+        <div class="rain-my-reports-list" data-my-reports-list>
+          <p class="rain-muted">Cargando reportes…</p>
+        </div>
+      </div>
+
       ${!currentUser.profileCompleted
         ? '<div class="rain-account-warning">Completá tu perfil para publicar como colaborador.</div>'
         : ''}
@@ -1332,6 +1651,177 @@
 
     renderAccountContent();
     document.querySelector('[data-account-dialog]')?.showModal();
+    loadMyReports({ silent: true });
+  }
+
+  function editCountdown(report) {
+    const ms = new Date(report.editDeadline).getTime() - Date.now();
+    if (ms <= 0) return 'Edición cerrada';
+    const minutes = Math.floor(ms / 60000);
+    const seconds = Math.floor((ms % 60000) / 1000);
+    return `Editar · ${minutes}:${String(seconds).padStart(2, '0')}`;
+  }
+
+  function renderMyReports() {
+    const host = document.querySelector('[data-my-reports-list]');
+    if (!host) return;
+    if (!myReportsCache.length) {
+      host.innerHTML = '<p class="rain-muted">Todavía no tenés reportes registrados.</p>';
+      return;
+    }
+    host.innerHTML = myReportsCache.map(report => `
+      <article class="rain-own-report">
+        <div>
+          <strong>${Number(report.millimeters).toLocaleString('es-AR', { maximumFractionDigits: 1 })} mm · ${escapeHtml(intensityLabel(report.intensity))}</strong>
+          <span>${escapeHtml(report.placeLabel || report.locationInputLabel || 'Ubicación seleccionada')} · ${escapeHtml(relativeTime(report.createdAt))}</span>
+        </div>
+        <div class="rain-own-report-meta">
+          <span class="rain-trust-badge ${trustInfo(report).className}">${escapeHtml(trustInfo(report).label)}</span>
+          ${report.canEdit
+            ? `<button class="btn btn-secondary btn-small" type="button" data-edit-own-report="${escapeHtml(report.id)}">${escapeHtml(editCountdown(report))}</button>`
+            : '<span class="rain-edit-closed">Edición cerrada</span>'}
+        </div>
+      </article>
+    `).join('');
+  }
+
+  async function loadMyReports({ silent = false } = {}) {
+    if (!currentUser) return;
+    try {
+      const data = await apiFetch('/usuarios/reportes?limit=5');
+      myReportsCache = Array.isArray(data.reports) ? data.reports : [];
+      renderMyReports();
+    } catch (error) {
+      if (!silent) console.error(error);
+      const host = document.querySelector('[data-my-reports-list]');
+      if (host) host.innerHTML = '<p class="rain-muted">No se pudieron cargar tus reportes.</p>';
+    }
+  }
+
+  function renderEditSelectedLocation(label = '') {
+    const selected = document.querySelector('[data-edit-selected-location]');
+    const confidence = document.querySelector('[data-edit-location-confidence]');
+    if (selected && editSelectedPoint) {
+      selected.textContent = label || editSelectedLocationMeta.inputLabel
+        || `${editSelectedPoint.lat.toFixed(5)}, ${editSelectedPoint.lng.toFixed(5)}`;
+    }
+    if (confidence) confidence.textContent = editSelectedPoint ? locationAccuracyText(editSelectedLocationMeta.accuracyM) : '';
+  }
+
+  function setEditSelectedPoint(lat, lng, options = {}) {
+    editSelectedPoint = { lat: Number(lat), lng: Number(lng) };
+    editSelectedLocationMeta = {
+      source: options.source || 'map',
+      accuracyM: options.accuracyM === null || options.accuracyM === undefined || options.accuracyM === ''
+        ? null
+        : Number.isFinite(Number(options.accuracyM)) ? Number(options.accuracyM) : null,
+      inputLabel: String(options.inputLabel || options.label || '').trim()
+    };
+    renderEditSelectedLocation(options.label || editSelectedLocationMeta.inputLabel);
+    if (editPickedMarker) editPickedMarker.remove();
+    editPickedMarker = L.marker([editSelectedPoint.lat, editSelectedPoint.lng], {
+      icon: L.divIcon({ className: '', html: '<div class="rain-picked-marker is-edit"></div>', iconSize: [20,20], iconAnchor: [10,10] })
+    }).addTo(map);
+  }
+
+  function openEditReport(reportId) {
+    const report = myReportsCache.find(item => item.id === reportId);
+    if (!report || !report.canEdit) return;
+    editingReport = report;
+    const form = document.querySelector('[data-edit-report-form]');
+    const dialog = document.querySelector('[data-edit-report-dialog]');
+    if (!form || !dialog) return;
+
+    form.elements.millimeters.value = report.millimeters;
+    form.elements.intensity.value = report.intensity;
+    form.elements.ongoing.checked = report.ongoing;
+    form.elements.measured.checked = report.measured;
+    form.elements.placeLabel.value = report.placeLabel || '';
+    form.elements.comment.value = report.comment || '';
+    const address = document.querySelector('[data-edit-address-search]');
+    if (address) address.value = report.locationInputLabel || '';
+
+    setEditSelectedPoint(report.lat, report.lng, {
+      source: report.locationSource || 'map',
+      accuracyM: report.locationAccuracyM,
+      inputLabel: report.locationInputLabel || '',
+      label: report.locationInputLabel || `${Number(report.lat).toFixed(5)}, ${Number(report.lng).toFixed(5)}`
+    });
+    setStatus(document.querySelector('[data-edit-report-status]'), '');
+    const intro = document.querySelector('[data-edit-report-intro]');
+    if (intro) intro.textContent = `${editCountdown(report)} · ${Math.max(0, report.maxEdits - report.editCount)} correcciones disponibles.`;
+    dialog.showModal();
+  }
+
+  function requestEditLocation() {
+    if (!navigator.geolocation) {
+      setStatus(document.querySelector('[data-edit-report-status]'), 'Tu navegador no permite obtener ubicación.', 'error');
+      return;
+    }
+    setStatus(document.querySelector('[data-edit-report-status]'), 'Obteniendo ubicación…');
+    navigator.geolocation.getCurrentPosition(pos => {
+      const { latitude, longitude, accuracy } = pos.coords;
+      setEditSelectedPoint(latitude, longitude, {
+        source: 'geolocation', accuracyM: accuracy, inputLabel: '', label: 'Ubicación detectada'
+      });
+      map.setView([latitude, longitude], Number(accuracy) > 5000 ? 9 : 13);
+      setStatus(
+        document.querySelector('[data-edit-report-status]'),
+        Number(accuracy) > 1000 ? 'Ubicación aproximada. Revisá el pin antes de guardar.' : 'Ubicación detectada. Revisá el pin.',
+        Number(accuracy) > 1000 ? 'error' : 'ok'
+      );
+    }, () => setStatus(document.querySelector('[data-edit-report-status]'), 'No se pudo obtener la ubicación.', 'error'), {
+      enableHighAccuracy: true, timeout: 10000, maximumAge: 120000
+    });
+  }
+
+  function enterEditPickMode() {
+    document.querySelector('[data-edit-report-dialog]')?.close();
+    editPickMode = true;
+    document.body.classList.add('rain-pick-mode');
+    if (mapStatus) mapStatus.textContent = 'Tocá el mapa para corregir la ubicación del reporte.';
+  }
+
+  async function saveEditedReport(event) {
+    event.preventDefault();
+    if (!editingReport || !editSelectedPoint) return;
+    const form = event.currentTarget;
+    const status = document.querySelector('[data-edit-report-status]');
+    const submit = form.querySelector('button[type="submit"]');
+    const data = new FormData(form);
+    submit.disabled = true;
+    setStatus(status, 'Guardando corrección…');
+
+    try {
+      const result = await apiFetch(`/reportes/${encodeURIComponent(editingReport.id)}`, {
+        method: 'PATCH',
+        body: {
+          lat: editSelectedPoint.lat,
+          lng: editSelectedPoint.lng,
+          millimeters: Number(data.get('millimeters')),
+          intensity: String(data.get('intensity') || ''),
+          ongoing: data.get('ongoing') === 'on',
+          measured: data.get('measured') === 'on',
+          placeLabel: String(data.get('placeLabel') || '').trim(),
+          comment: String(data.get('comment') || '').trim(),
+          locationSource: editSelectedLocationMeta.source,
+          locationAccuracyM: editSelectedLocationMeta.accuracyM,
+          locationInputLabel: editSelectedLocationMeta.inputLabel
+        }
+      });
+      if (result.user) currentUser = result.user;
+      renderAccountButton();
+      prepareSubmissionUi();
+      setStatus(status, result.consensusReevaluated ? 'Corrección guardada y consenso reevaluado.' : 'Corrección guardada.', 'ok');
+      await loadMyReports({ silent: true });
+      await loadReports({ fit: false });
+      setTimeout(() => document.querySelector('[data-edit-report-dialog]')?.close(), 650);
+    } catch (error) {
+      setStatus(status, error.message || 'No se pudo guardar la corrección.', 'error');
+      await loadMyReports({ silent: true });
+    } finally {
+      submit.disabled = false;
+    }
   }
 
   async function logout() {
