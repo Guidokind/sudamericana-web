@@ -1,0 +1,20 @@
+Sudamericana SRL - Corrección Lluvias
+
+Cambios realizados sobre los archivos reales subidos:
+
+1. LOGIN / CUENTA
+- El botón ya existe desde el HTML en su posición final dentro del nav.
+- lluvias.js deja de insertarlo dentro de .rain-hero-actions.
+- Se conserva toda la lógica existente de sesión, usuario, avatar y perfil.
+- Se mantiene un fallback al nav si el botón faltara por error.
+
+2. COMPARTIR
+- Nuevo botón "Compartir" junto a "Ver mi zona".
+- Usa navigator.share cuando está disponible.
+- Si no está disponible, copia la URL canónica de Lluvias.
+- Muestra feedback temporal "Enlace copiado".
+
+Archivos:
+- lluvias.html
+- assets/js/lluvias.js
+- assets/css/lluvias.css

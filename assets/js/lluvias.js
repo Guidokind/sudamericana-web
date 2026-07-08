@@ -535,9 +535,69 @@
     });
   });
 
+
+  async function copyRainPageUrl(url) {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(url);
+      return;
+    }
+
+    const textarea = document.createElement('textarea');
+    textarea.value = url;
+    textarea.setAttribute('readonly', '');
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    textarea.style.pointerEvents = 'none';
+    document.body.appendChild(textarea);
+    textarea.select();
+
+    const copied = document.execCommand('copy');
+    textarea.remove();
+
+    if (!copied) throw new Error('No se pudo copiar el enlace.');
+  }
+
+  async function shareRainPage(button) {
+    const canonical = document.querySelector('link[rel="canonical"]')?.href;
+    const url = canonical || new URL(window.location.pathname, window.location.origin).href;
+    const originalHtml = button?.innerHTML || 'Compartir';
+
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: 'Lluvias reportadas | Sudamericana',
+          text: 'Consultá y compartí reportes recientes de lluvia de la comunidad rural.',
+          url
+        });
+        return;
+      }
+
+      await copyRainPageUrl(url);
+
+      if (button) {
+        button.textContent = 'Enlace copiado';
+        window.setTimeout(() => {
+          button.innerHTML = originalHtml;
+        }, 1800);
+      }
+    } catch (error) {
+      if (error?.name === 'AbortError') return;
+
+      console.error(error);
+
+      if (button) {
+        button.textContent = 'No se pudo compartir';
+        window.setTimeout(() => {
+          button.innerHTML = originalHtml;
+        }, 2200);
+      }
+    }
+  }
+
   document.querySelectorAll('[data-open-report]').forEach(button => button.addEventListener('click', openReport));
   document.querySelectorAll('[data-close-report]').forEach(button => button.addEventListener('click', closeReport));
   document.querySelector('[data-use-location]')?.addEventListener('click', () => requestLocation({ openDialog: false }));
+  document.querySelector('[data-share-rain]')?.addEventListener('click', event => shareRainPage(event.currentTarget));
   document.querySelector('[data-dialog-location]')?.addEventListener('click', () => requestLocation({ openDialog: true }));
   document.querySelector('[data-pick-map]')?.addEventListener('click', enterPickMode);
 
@@ -706,13 +766,15 @@
   }
 
   function injectCommunityUi() {
-    const heroActions = document.querySelector('.rain-hero-actions');
-    if (heroActions && !document.querySelector('[data-account-button]')) {
+    const mainNav = document.querySelector('.main-nav');
+    if (mainNav && !document.querySelector('[data-account-button]')) {
       const accountButton = document.createElement('button');
       accountButton.type = 'button';
-      accountButton.className = 'btn btn-secondary rain-account-button';
+      accountButton.className = 'btn btn-secondary rain-account-button rain-account-button-nav';
       accountButton.dataset.accountButton = '';
-      heroActions.appendChild(accountButton);
+      accountButton.setAttribute('aria-label', 'Ingresar o crear perfil de colaborador');
+      accountButton.innerHTML = '<span class="rain-account-dot" aria-hidden="true"></span><span>Ingresar</span>';
+      mainNav.appendChild(accountButton);
     }
 
     const workspace = document.querySelector('.rain-workspace');

@@ -792,3 +792,19 @@
     justify-items: center;
   }
 }
+
+/* Cuenta estable en la navegación: evita el salto desde el hero al cargar */
+.main-nav .rain-account-button-nav {
+  flex: 0 0 auto;
+  min-height: 40px;
+  padding: 9px 13px;
+  white-space: nowrap;
+}
+
+@media (max-width: 820px) {
+  .main-nav .rain-account-button-nav {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
