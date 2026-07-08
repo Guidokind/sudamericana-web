@@ -46,6 +46,7 @@
   let loadController = null;
 
   let currentUser = null;
+  let sessionResolved = false;
   let authId = null;
   let googleConfig = null;
   let googleScriptPromise = null;
@@ -1053,17 +1054,14 @@
     const mainNav = document.querySelector('.main-nav');
     let accountButton = document.querySelector('[data-account-button]');
 
-    if (!accountButton) {
+    if (!accountButton && mainNav) {
       accountButton = document.createElement('button');
       accountButton.type = 'button';
-      accountButton.className = 'btn btn-secondary rain-account-button rain-account-button-nav';
+      accountButton.className = 'btn btn-secondary rain-account-button rain-account-button-nav is-auth-pending';
       accountButton.dataset.accountButton = '';
-      accountButton.setAttribute('aria-label', 'Ingresar o crear perfil de colaborador');
+      accountButton.setAttribute('aria-label', 'Cuenta de colaborador');
+      accountButton.setAttribute('aria-busy', 'true');
       accountButton.innerHTML = '<span class="rain-account-dot" aria-hidden="true"></span><span>Ingresar</span>';
-    }
-
-    if (mainNav && accountButton) {
-      // appendChild también mueve un nodo existente: garantiza que quede después de Contacto.
       mainNav.appendChild(accountButton);
     }
 
@@ -1382,8 +1380,14 @@
     const button = document.querySelector('[data-account-button]');
     if (!button) return;
 
-    const mainNav = document.querySelector('.main-nav');
-    if (mainNav) mainNav.appendChild(button);
+    if (!sessionResolved) {
+      button.classList.add('is-auth-pending');
+      button.setAttribute('aria-busy', 'true');
+      return;
+    }
+
+    button.classList.remove('is-auth-pending');
+    button.removeAttribute('aria-busy');
 
     if (!currentUser) {
       button.innerHTML = '<span class="rain-account-dot" aria-hidden="true"></span><span>Ingresar</span>';
@@ -1569,6 +1573,7 @@
 
   async function afterAuthentication(user) {
     currentUser = user || null;
+    sessionResolved = true;
     renderAccountButton();
     prepareSubmissionUi();
 
@@ -1591,6 +1596,7 @@
       }
     }
 
+    sessionResolved = true;
     renderAccountButton();
     prepareSubmissionUi();
     return currentUser;

@@ -797,9 +797,15 @@
 .main-nav .rain-account-button-nav {
   order: 999;
   flex: 0 0 auto;
+  min-width: 132px;
   min-height: 40px;
   padding: 9px 13px;
   white-space: nowrap;
+}
+
+.main-nav .rain-account-button-nav.is-auth-pending {
+  visibility: hidden;
+  pointer-events: none;
 }
 
 @media (max-width: 820px) {

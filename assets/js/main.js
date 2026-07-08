@@ -97,10 +97,29 @@
       }
     ];
 
+    // En Lluvias existe un botón real administrado por lluvias.js.
+    // Ese botón es la única cuenta visible: no creamos un enlace duplicado.
+    const rainAccountButton = isRainPage()
+      ? getRainAccountBridge()
+      : null;
+
+    let accountLink = getGlobalAccountLink();
+
+    if (rainAccountButton && accountLink) {
+      accountLink.remove();
+      accountLink = null;
+    }
+
+    const accountControl = rainAccountButton || accountLink;
+
     for (const item of desiredLinks) {
       let link = Array
         .from(nav.querySelectorAll('a'))
         .find((candidate) => {
+          if (candidate.matches('[data-global-account-link]')) {
+            return false;
+          }
+
           const href =
             candidate.getAttribute('href') || '';
 
@@ -116,10 +135,22 @@
       }
 
       link.textContent = item.label;
-      nav.appendChild(link);
+
+      // Nunca reordenamos la cuenta. Los enlaces se colocan antes
+      // del control de cuenta si ya existe.
+      if (
+        accountControl &&
+        accountControl.parentNode === nav
+      ) {
+        nav.insertBefore(link, accountControl);
+      } else {
+        nav.appendChild(link);
+      }
     }
 
-    let accountLink = getGlobalAccountLink();
+    if (rainAccountButton) return;
+
+    accountLink = getGlobalAccountLink();
 
     if (!accountLink) {
       accountLink = document.createElement('a');
@@ -132,9 +163,9 @@
         'aria-label',
         'Ingresar o abrir mi cuenta'
       );
-
-      nav.appendChild(accountLink);
     }
+
+    nav.appendChild(accountLink);
   }
 
   // =========================================================
@@ -236,12 +267,12 @@
   function prepareRainAccountBridge(button) {
     if (!button) return false;
 
-    // El botón original sigue existiendo internamente
-    // porque lluvias.js contiene toda la lógica real
-    // de login, perfil y cuenta.
-    //
-    // Pero lo ocultamos visualmente para evitar
-    // el "Ingresar" duplicado dentro del hero.
+    const accountLink = getGlobalAccountLink();
+
+    // En la propia página Lluvias usamos directamente el botón real.
+    // Solo lo ocultamos cuando existe un enlace global separado.
+    if (!accountLink) return true;
+
     button.style.display = 'none';
 
     syncGlobalAccountFromRainButton(button);
@@ -371,7 +402,33 @@
   async function connectGlobalAccountLink() {
     const accountLink = getGlobalAccountLink();
 
-    if (!accountLink) return;
+    if (!accountLink) {
+      if (
+        isRainPage() &&
+        window.location.hash.toLowerCase() === '#cuenta'
+      ) {
+        const button = await waitForRainAccountBridge();
+
+        if (button) {
+          await waitForRainSessionState(
+            button,
+            isRainButtonLoggedIn(button)
+          );
+
+          button.click();
+        }
+
+        if (window.history?.replaceState) {
+          window.history.replaceState(
+            null,
+            '',
+            `${window.location.pathname}${window.location.search}`
+          );
+        }
+      }
+
+      return;
+    }
 
     accountLink.addEventListener(
       'click',
