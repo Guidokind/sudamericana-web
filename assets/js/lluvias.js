@@ -36,6 +36,8 @@
   let myReportsCache = [];
   let localitySearchController = null;
   let localityDebounceTimer = null;
+  const placeSearchControllers = { report: null, edit: null };
+  const placeDebounceTimers = { report: null, edit: null };
   let pendingReportId = null;
   let submissionMode = 'anonymous';
   let reportTurnstileWidgetId = null;
@@ -393,6 +395,153 @@
     }
   }
 
+  function placeSuggestionLabel(item) {
+    return [item.name, item.admin1, item.country].filter(Boolean).join(', ');
+  }
+
+  function bindPlaceAutocomplete({ edit = false } = {}) {
+    const input = edit
+      ? document.querySelector('[data-edit-address-search]')
+      : addressInput;
+    const host = edit
+      ? document.querySelector('[data-edit-address-results]')
+      : addressResultsEl;
+    const status = edit
+      ? document.querySelector('[data-edit-address-status]')
+      : addressStatusEl;
+    if (!input || !host || input.dataset.placeAutocompleteBound === '1') return;
+
+    input.dataset.placeAutocompleteBound = '1';
+    const key = edit ? 'edit' : 'report';
+    let activeIndex = -1;
+    let items = [];
+
+    const close = () => {
+      host.hidden = true;
+      activeIndex = -1;
+      host.querySelectorAll('button').forEach(button => button.classList.remove('is-active'));
+    };
+
+    const select = index => {
+      const item = items[index];
+      if (!item) return;
+      const label = item.label || placeSuggestionLabel(item);
+      input.value = label;
+
+      if (edit) {
+        setEditSelectedPoint(item.lat, item.lng, {
+          source: 'address', accuracyM: null, inputLabel: label, label
+        });
+        map.setView([item.lat, item.lng], 13);
+        setStatus(status, 'Lugar seleccionado. Podés ajustar el pin o buscar una dirección exacta.', 'ok');
+      } else {
+        setSelectedPoint(item.lat, item.lng, 'Lugar', {
+          locationSource: 'address', accuracyM: null, inputLabel: label, label
+        });
+        map.setView([item.lat, item.lng], 13);
+        setStatus(status, 'Lugar seleccionado. Podés ajustar el pin o buscar una dirección exacta.', 'ok');
+      }
+
+      close();
+    };
+
+    input.addEventListener('input', () => {
+      clearTimeout(placeDebounceTimers[key]);
+      placeSearchControllers[key]?.abort();
+      const q = input.value.trim();
+
+      if (q.length < 3) {
+        items = [];
+        host.innerHTML = '';
+        close();
+        if (!q) setStatus(status, '');
+        return;
+      }
+
+      placeDebounceTimers[key] = setTimeout(async () => {
+        placeSearchControllers[key] = new AbortController();
+        try {
+          const endpoint = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=8&language=es&format=json`;
+          const response = await fetch(endpoint, { signal: placeSearchControllers[key].signal });
+          if (!response.ok) throw new Error('No se pudieron buscar lugares.');
+          const data = await response.json();
+          const raw = Array.isArray(data.results) ? data.results : [];
+
+          items = raw
+            .map(item => ({
+              name: String(item.name || ''),
+              admin1: String(item.admin1 || ''),
+              country: String(item.country || ''),
+              countryCode: String(item.country_code || ''),
+              lat: Number(item.latitude),
+              lng: Number(item.longitude)
+            }))
+            .filter(item => Number.isFinite(item.lat) && Number.isFinite(item.lng) && item.name)
+            .sort((a, b) => Number(b.countryCode === 'AR') - Number(a.countryCode === 'AR'))
+            .slice(0, 6)
+            .map(item => ({ ...item, label: placeSuggestionLabel(item) }));
+
+          host.innerHTML = '';
+          for (const [index, item] of items.entries()) {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'rain-geocode-option';
+            button.innerHTML = `<strong>${escapeHtml(item.name)}</strong><span>${escapeHtml([item.admin1, item.country].filter(Boolean).join(' · '))}</span>`;
+            button.addEventListener('mousedown', event => event.preventDefault());
+            button.addEventListener('click', () => select(index));
+            host.appendChild(button);
+          }
+
+          host.hidden = !items.length;
+          activeIndex = -1;
+          if (items.length) {
+            setStatus(status, 'Elegí una sugerencia o seguí escribiendo. Para calle y número exactos, usá Buscar.');
+          }
+        } catch (error) {
+          if (error.name !== 'AbortError') {
+            items = [];
+            host.innerHTML = '';
+            close();
+          }
+        }
+      }, 300);
+    });
+
+    input.addEventListener('keydown', event => {
+      if (!host.hidden && items.length) {
+        if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+          event.preventDefault();
+          activeIndex = event.key === 'ArrowDown'
+            ? (activeIndex + 1) % items.length
+            : (activeIndex - 1 + items.length) % items.length;
+          host.querySelectorAll('button').forEach((button, index) => {
+            button.classList.toggle('is-active', index === activeIndex);
+          });
+          return;
+        }
+
+        if (event.key === 'Enter' && activeIndex >= 0) {
+          event.preventDefault();
+          select(activeIndex);
+          return;
+        }
+
+        if (event.key === 'Escape') {
+          event.preventDefault();
+          close();
+          return;
+        }
+      }
+
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        searchAddress({ edit });
+      }
+    });
+
+    input.addEventListener('blur', () => setTimeout(close, 140));
+  }
+
   async function searchAddress({ edit = false } = {}) {
     const input = edit
       ? document.querySelector('[data-edit-address-search]')
@@ -733,17 +882,8 @@
   document.querySelector('[data-share-rain]')?.addEventListener('click', event => shareRainPage(event.currentTarget));
   document.querySelector('[data-dialog-location]')?.addEventListener('click', () => requestLocation({ openDialog: true }));
   document.querySelector('[data-search-address]')?.addEventListener('click', () => searchAddress());
-  addressInput?.addEventListener('keydown', event => {
-    if (event.key === 'Enter') {
-      event.preventDefault();
-      searchAddress();
-    }
-  });
+  bindPlaceAutocomplete();
   document.querySelector('[data-pick-map]')?.addEventListener('click', enterPickMode);
-
-  reportDialog?.addEventListener('click', event => {
-    if (event.target === reportDialog) closeReport();
-  });
 
   reportForm?.addEventListener('submit', async event => {
     event.preventDefault();
@@ -911,13 +1051,19 @@
 
   function injectCommunityUi() {
     const mainNav = document.querySelector('.main-nav');
-    if (mainNav && !document.querySelector('[data-account-button]')) {
-      const accountButton = document.createElement('button');
+    let accountButton = document.querySelector('[data-account-button]');
+
+    if (!accountButton) {
+      accountButton = document.createElement('button');
       accountButton.type = 'button';
       accountButton.className = 'btn btn-secondary rain-account-button rain-account-button-nav';
       accountButton.dataset.accountButton = '';
       accountButton.setAttribute('aria-label', 'Ingresar o crear perfil de colaborador');
       accountButton.innerHTML = '<span class="rain-account-dot" aria-hidden="true"></span><span>Ingresar</span>';
+    }
+
+    if (mainNav && accountButton) {
+      // appendChild también mueve un nodo existente: garantiza que quede después de Contacto.
       mainNav.appendChild(accountButton);
     }
 
@@ -1078,9 +1224,9 @@
 
             <div class="rain-address-block">
               <label class="rain-field">
-                <span>Corregir dirección o lugar <small>(opcional)</small></span>
+                <span>Corregir localidad, dirección o lugar <small>(opcional)</small></span>
                 <div class="rain-search-row">
-                  <input class="input" type="search" data-edit-address-search placeholder="Ej. San Martín 742, Villa Ángela">
+                  <input class="input" type="search" data-edit-address-search placeholder="Ej. Villa Ángela o San Martín 742">
                   <button class="btn btn-secondary" type="button" data-edit-search-address>Buscar</button>
                 </div>
               </label>
@@ -1215,9 +1361,7 @@
       document.querySelector('[data-edit-report-dialog]')?.close();
     }));
     document.querySelector('[data-edit-search-address]')?.addEventListener('click', () => searchAddress({ edit: true }));
-    document.querySelector('[data-edit-address-search]')?.addEventListener('keydown', event => {
-      if (event.key === 'Enter') { event.preventDefault(); searchAddress({ edit: true }); }
-    });
+    bindPlaceAutocomplete({ edit: true });
     document.querySelector('[data-edit-use-location]')?.addEventListener('click', requestEditLocation);
     document.querySelector('[data-edit-pick-map]')?.addEventListener('click', enterEditPickMode);
     document.querySelector('[data-edit-report-form]')?.addEventListener('submit', saveEditedReport);
@@ -1238,14 +1382,19 @@
     const button = document.querySelector('[data-account-button]');
     if (!button) return;
 
+    const mainNav = document.querySelector('.main-nav');
+    if (mainNav) mainNav.appendChild(button);
+
     if (!currentUser) {
-      button.innerHTML = '<span class="rain-account-dot"></span> Ingresar';
+      button.innerHTML = '<span class="rain-account-dot" aria-hidden="true"></span><span>Ingresar</span>';
       button.setAttribute('aria-label', 'Ingresar o crear perfil de colaborador');
+      button.removeAttribute('title');
       return;
     }
 
-    button.innerHTML = `${avatarHtml(currentUser, 'small')}<span>@${escapeHtml(currentUser.username)}</span>`;
+    button.innerHTML = `${avatarHtml(currentUser, 'small')}<span>Mi cuenta</span>`;
     button.setAttribute('aria-label', `Abrir perfil de @${currentUser.username}`);
+    button.setAttribute('title', `@${currentUser.username}`);
   }
 
   function openAuthDialog() {

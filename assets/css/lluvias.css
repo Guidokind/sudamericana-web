@@ -795,6 +795,7 @@
 
 /* Cuenta estable en la navegación: evita el salto desde el hero al cargar */
 .main-nav .rain-account-button-nav {
+  order: 999;
   flex: 0 0 auto;
   min-height: 40px;
   padding: 9px 13px;
@@ -856,6 +857,10 @@
 .rain-geocode-option:hover,
 .rain-autocomplete-list button:hover,
 .rain-autocomplete-list button.is-active { background: rgba(66,111,69,.09); }
+.rain-geocode-option.is-active { background: rgba(66,111,69,.09); }
+.rain-geocode-option strong,
+.rain-geocode-option span { display: block; }
+.rain-geocode-option span { margin-top: 2px; color: var(--ink-soft); font-size: .78rem; }
 .rain-autocomplete { position: relative; }
 .rain-autocomplete-list { position: absolute; left: 0; right: 0; top: calc(100% + 4px); margin-top: 0; }
 .rain-autocomplete-list button { display: grid; gap: 2px; }
