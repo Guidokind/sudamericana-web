@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#183f31">
   <meta name="color-scheme" content="light">
-  <title>Lluvias · por Sudamericana</title>
+  <title>Lluvias</title>
   <meta name="description" content="Mapa comunitario de lluvias. Mirá reportes cercanos e informá milímetros en segundos.">
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./icons/lluvias-192.png">
@@ -27,6 +27,14 @@
 
     <main class="map-stage">
       <div id="app-map" class="map" aria-label="Mapa de reportes de lluvia"></div>
+
+      <section class="location-gate" data-location-gate hidden aria-live="polite">
+        <strong>Usá tu ubicación</strong>
+        <span>Así cargamos primero los reportes a 25, 60 y 100 km de donde estás.</span>
+        <button type="button" data-location-start>USAR MI UBICACIÓN</button>
+        <button type="button" class="location-manual" data-location-manual>Elegir zona en mapa</button>
+        <small data-location-gate-message></small>
+      </section>
 
       <div class="map-status" data-map-status aria-live="polite">
         <span class="pulse"></span><span>Cargando zona cercana…</span>
@@ -109,7 +117,7 @@
     window.LLUVIAS_APP_CONFIG = {
       apiBase: 'https://lluvias-api.sudamericanasrl.com',
       turnstileSiteKey: '0x4AAAAAADw9UWpVAQYqzGRw',
-      appVersion: '0.1.1'
+      appVersion: '0.1.2'
     };
   </script>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>

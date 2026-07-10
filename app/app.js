@@ -18,6 +18,8 @@
   let userLocation = null;
   let userLocationMarker = null;
   let progressiveRun = 0;
+  let locationRequestInFlight = false;
+  let locationRefineRun = 0;
   const reportsById = new Map();
   const markersById = new Map();
 
@@ -120,30 +122,97 @@
 
   function getCurrentPosition(options = {}) {
     return new Promise((resolve, reject) => {
-      if (!navigator.geolocation) return reject(new Error('geolocation-unavailable'));
+      if (!navigator.geolocation) {
+        const error = new Error('geolocation-unavailable');
+        error.code = 0;
+        return reject(error);
+      }
       navigator.geolocation.getCurrentPosition(resolve, reject, {
-        enableHighAccuracy: true,
-        timeout: options.timeout || 12000,
-        maximumAge: options.maximumAge ?? 120000
+        enableHighAccuracy: options.enableHighAccuracy ?? false,
+        timeout: options.timeout ?? 10000,
+        maximumAge: options.maximumAge ?? 300000
       });
     });
   }
 
-  async function locateUser({ center = true, reload = true, announce = true } = {}) {
+  function geoErrorMessage(error) {
+    if (Number(error?.code) === 1) return 'La ubicación está bloqueada para este sitio. Revisá el permiso de ubicación del navegador y reintentá.';
+    if (Number(error?.code) === 2) return 'El teléfono no pudo obtener una posición. Probá de nuevo en un lugar con mejor señal GPS.';
+    if (Number(error?.code) === 3) return 'La ubicación tardó demasiado. Tocá de nuevo para reintentar.';
+    if (error?.message === 'geolocation-unavailable') return 'Este navegador no ofrece ubicación.';
+    return 'No pudimos obtener tu ubicación. Tocá de nuevo para reintentar.';
+  }
+
+  function showLocationGate(message = '') {
+    const gate = $('[data-location-gate]');
+    if (!gate) return;
+    gate.hidden = false;
+    const msg = $('[data-location-gate-message]', gate);
+    if (msg) msg.textContent = message;
+  }
+
+  function hideLocationGate() {
+    const gate = $('[data-location-gate]');
+    if (gate) gate.hidden = true;
+  }
+
+  function setLocatingUi(active) {
+    $('[data-locate]')?.classList.toggle('is-locating', active);
+    const start = $('[data-location-start]');
+    if (start) {
+      start.disabled = active;
+      start.textContent = active ? 'BUSCANDO…' : 'USAR MI UBICACIÓN';
+    }
+  }
+
+  async function refineUserLocation(baseLocation, { center = false, reload = true } = {}) {
+    const run = ++locationRefineRun;
+    try {
+      const pos = await getCurrentPosition({
+        enableHighAccuracy: true,
+        timeout: 20000,
+        maximumAge: 0
+      });
+      if (run !== locationRefineRun) return;
+      const fresh = {
+        lat: pos.coords.latitude,
+        lng: pos.coords.longitude,
+        accuracy: pos.coords.accuracy
+      };
+      const baseAccuracy = Number(baseLocation?.accuracy);
+      const freshAccuracy = Number(fresh.accuracy);
+      const movedKm = kmBetween(baseLocation, fresh);
+      const meaningfullyBetter = !Number.isFinite(baseAccuracy) || (Number.isFinite(freshAccuracy) && freshAccuracy + 50 < baseAccuracy);
+      if (!meaningfullyBetter && movedKm < 0.35) return;
+      showUserLocation(fresh, { center });
+      if (reload) progressiveLoad({ lat: fresh.lat, lng: fresh.lng });
+      setStatus(fresh.accuracy > 5000 ? 'Ubicación aproximada' : 'Ubicación actualizada', false);
+    } catch {
+      // La primera posición ya es utilizable; el refinamiento GPS es opcional.
+    }
+  }
+
+  async function locateUser({ center = true, reload = true, announce = true, fromGesture = false } = {}) {
+    if (locationRequestInFlight) return null;
+    locationRequestInFlight = true;
+    setLocatingUi(true);
     if (announce) setStatus('Buscando tu ubicación…', true);
     try {
-      const pos = await getCurrentPosition();
+      const pos = await getCurrentPosition({
+        enableHighAccuracy: false,
+        timeout: fromGesture ? 12000 : 7000,
+        maximumAge: 300000
+      });
       const location = {
         lat: pos.coords.latitude,
         lng: pos.coords.longitude,
         accuracy: pos.coords.accuracy
       };
+      hideLocationGate();
       showUserLocation(location, { center });
       if (reload) progressiveLoad({ lat: location.lat, lng: location.lng });
-      if (location.accuracy > 5000) {
-        setStatus('Ubicación aproximada · reportes alrededor de tu posición', false);
-        toast('La ubicación es poco precisa. Podés volver a intentar con el botón ◎.', 4500);
-      }
+      setStatus(location.accuracy > 5000 ? 'Ubicación aproximada · afinando GPS…' : 'Ubicación encontrada', false);
+      Promise.resolve().then(() => refineUserLocation(location, { center: false, reload }));
       return location;
     } catch (error) {
       const saved = readSavedLocation();
@@ -151,11 +220,17 @@
         showUserLocation(saved, { center });
         if (reload) progressiveLoad({ lat: saved.lat, lng: saved.lng });
         setStatus('Usando tu última ubicación guardada', false);
+        if (fromGesture) showLocationGate(geoErrorMessage(error));
         return saved;
       }
-      setStatus('No pudimos ubicarte · tocá ◎ para intentar otra vez', false);
-      if (announce) toast('Necesitamos tu ubicación para cargar reportes cercanos.', 4500);
+      const message = geoErrorMessage(error);
+      setStatus('Necesitamos tu ubicación para cargar la zona cercana', false);
+      showLocationGate(message);
+      if (announce) toast(message, 5200);
       return null;
+    } finally {
+      locationRequestInFlight = false;
+      setLocatingUi(false);
     }
   }
 
@@ -272,16 +347,13 @@
 
   async function useLocation() {
     $('[data-location-detail]').textContent='Buscando GPS…';
-    try {
-      const pos = await getCurrentPosition({ timeout: 12000, maximumAge: 60000 });
-      const { latitude, longitude, accuracy } = pos.coords;
-      setReportPoint(latitude, longitude, 'geolocation', accuracy);
-      showUserLocation({ lat: latitude, lng: longitude, accuracy }, { center: true });
-      progressiveLoad({ lat: latitude, lng: longitude });
-      if (accuracy > 5000) toast('Ubicación poco precisa. Podés tocar el mapa para corregirla.',4500);
-    } catch {
-      toast('No se pudo obtener la ubicación. Elegí el punto en el mapa.');
+    const location = await locateUser({ center:true, reload:true, announce:true, fromGesture:true });
+    if (!location) {
+      $('[data-location-detail]').textContent='No se pudo obtener. Elegí el punto en el mapa.';
+      return;
     }
+    setReportPoint(location.lat, location.lng, 'geolocation', location.accuracy ?? null);
+    if (Number(location.accuracy) > 5000) toast('Ubicación poco precisa. Podés tocar el mapa para corregirla.',4500);
   }
 
   function buildDraft(form) {
@@ -336,7 +408,15 @@
     $('[data-account]').addEventListener('click',openAccount);
     $('[data-close-account]').addEventListener('click',()=> $('[data-account-dialog]').close());
     $('[data-pending-chip]').addEventListener('click',showPending);
-    $('[data-locate]').addEventListener('click',()=>locateUser({ center:true, reload:true, announce:true }));
+    $('[data-locate]').addEventListener('click',()=>locateUser({ center:true, reload:true, announce:true, fromGesture:true }));
+    $('[data-location-start]').addEventListener('click',()=>locateUser({ center:true, reload:true, announce:true, fromGesture:true }));
+    $('[data-location-manual]').addEventListener('click',()=>{
+      const c = map.getCenter();
+      hideLocationGate();
+      setStatus('Zona elegida manualmente', false);
+      progressiveLoad({ lat:c.lat, lng:c.lng });
+      toast('Mové el mapa a tu zona. El reporte también puede corregirse tocando el mapa.', 4200);
+    });
     $$('[data-map-mode]').forEach(btn=>btn.addEventListener('click',()=>{
       const mode=btn.dataset.mapMode;
       if (activeLayer) map.removeLayer(activeLayer);
@@ -366,8 +446,14 @@
     }
 
     // La ubicación real define el centro de los anillos 25/60/100 km.
-    // Se solicita al iniciar; si el usuario no autoriza, queda la última ubicación guardada.
-    Promise.resolve().then(()=>locateUser({ center:true, reload:true, announce:!saved }));
+    // En el primer uso no dependemos de un pedido automático: mostramos una acción
+    // explícita para que el permiso nazca de un toque del usuario, más fiable en iPhone.
+    if (saved) {
+      Promise.resolve().then(()=>locateUser({ center:false, reload:true, announce:false, fromGesture:false }));
+    } else {
+      showLocationGate();
+      setStatus('Tocá “Usar mi ubicación” para cargar reportes cercanos', false);
+    }
 
     // Nada de esto bloquea mapa ni reporte.
     Promise.resolve().then(async()=>{ await ensureInstallation(); touchInstallation(); });
