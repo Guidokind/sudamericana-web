@@ -1,0 +1,25 @@
+{
+  "name": "Lluvias por Sudamericana",
+  "short_name": "Lluvias",
+  "description": "Mapa comunitario de lluvias y reportes rápidos.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f5f2e9",
+  "theme_color": "#183f31",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "./icons/lluvias-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./icons/lluvias-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
