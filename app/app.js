@@ -9,12 +9,14 @@
   const DB_NAME = 'lluvias-app-v1';
   const DB_VERSION = 1;
   let dbPromise = null;
-  let map, basicLayer, satelliteLayer, activeLayer;
+  let map, basicLayer, satelliteImageryLayer, satelliteLabelsLayer, satelliteLayer, activeLayer;
   let currentUser = null, sessionResolved = false;
   let installation = null;
   let reportTurnstileId = null;
   let turnstilePromise = null;
   let lastProgressiveAnchor = null;
+  let userLocation = null;
+  let userLocationMarker = null;
   let progressiveRun = 0;
   const reportsById = new Map();
   const markersById = new Map();
@@ -49,18 +51,112 @@
   function bboxForRadius(c, km) { const dLat=km/111.32, dLng=km/(111.32*Math.max(.2,Math.abs(Math.cos(c.lat*Math.PI/180)))); return `${(c.lng-dLng).toFixed(5)},${(c.lat-dLat).toFixed(5)},${(c.lng+dLng).toFixed(5)},${(c.lat+dLat).toFixed(5)}`; }
 
   function initMap() {
-    map = L.map('app-map', { zoomControl: false, preferCanvas: true, attributionControl: true }).setView([DEFAULT_CENTER.lat, DEFAULT_CENTER.lng], 9);
-    basicLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18, updateWhenIdle: true, keepBuffer: 1, attribution: '&copy; OpenStreetMap' });
-    satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 18, updateWhenIdle: true, keepBuffer: 1, attribution: 'Tiles &copy; Esri' });
+    const savedLocation = readSavedLocation();
+    const initial = savedLocation || DEFAULT_CENTER;
+    map = L.map('app-map', { zoomControl: false, preferCanvas: true, attributionControl: true })
+      .setView([initial.lat, initial.lng], savedLocation ? 10 : 9);
+
+    basicLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 18, updateWhenIdle: true, keepBuffer: 1, attribution: '&copy; OpenStreetMap'
+    });
+
+    satelliteImageryLayer = L.tileLayer(
+      'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+      { maxZoom: 18, updateWhenIdle: true, keepBuffer: 1, attribution: 'Imagery &copy; Esri' }
+    );
+    satelliteLabelsLayer = L.tileLayer(
+      'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
+      { maxZoom: 18, updateWhenIdle: true, keepBuffer: 1, opacity: .95, attribution: 'Reference &copy; Esri' }
+    );
+    satelliteLayer = L.layerGroup([satelliteImageryLayer, satelliteLabelsLayer]);
+
     activeLayer = basicLayer.addTo(map);
     map.on('moveend', () => {
-      const c = map.getCenter(), next = { lat: c.lat, lng: c.lng };
-      localStorage.setItem('lluvias:last-center', JSON.stringify(next));
-      if (!lastProgressiveAnchor || kmBetween(lastProgressiveAnchor, next) > 15) progressiveLoad(next);
+      const c = map.getCenter();
+      localStorage.setItem('lluvias:last-view', JSON.stringify({ lat: c.lat, lng: c.lng, zoom: map.getZoom() }));
     });
-    map.on('click', e => { if ($('[data-report-dialog]').open) setReportPoint(e.latlng.lat, e.latlng.lng, 'map', null); });
-    const saved = JSON.parse(localStorage.getItem('lluvias:last-center') || 'null');
-    if (saved && Number.isFinite(saved.lat) && Number.isFinite(saved.lng)) map.setView([saved.lat, saved.lng], 9);
+    map.on('click', e => {
+      if ($('[data-report-dialog]').open) setReportPoint(e.latlng.lat, e.latlng.lng, 'map', null);
+    });
+  }
+
+  function readSavedLocation() {
+    try {
+      const saved = JSON.parse(localStorage.getItem('lluvias:last-location') || 'null');
+      if (saved && Number.isFinite(Number(saved.lat)) && Number.isFinite(Number(saved.lng))) {
+        return {
+          lat: Number(saved.lat),
+          lng: Number(saved.lng),
+          accuracy: Number.isFinite(Number(saved.accuracy)) ? Number(saved.accuracy) : null,
+          savedAt: saved.savedAt || null
+        };
+      }
+    } catch {}
+    return null;
+  }
+
+  function saveLocation(location) {
+    localStorage.setItem('lluvias:last-location', JSON.stringify({
+      lat: location.lat, lng: location.lng, accuracy: location.accuracy ?? null, savedAt: new Date().toISOString()
+    }));
+  }
+
+  function showUserLocation(location, { center = true } = {}) {
+    userLocation = { ...location };
+    saveLocation(userLocation);
+    const latlng = [userLocation.lat, userLocation.lng];
+    if (!userLocationMarker) {
+      userLocationMarker = L.marker(latlng, {
+        icon: L.divIcon({ className: '', html: '<div class="user-location-marker"></div>', iconSize: [18,18], iconAnchor: [9,9] }),
+        keyboard: false,
+        interactive: false,
+        zIndexOffset: 1000
+      }).addTo(map);
+    } else {
+      userLocationMarker.setLatLng(latlng);
+    }
+    if (center) map.setView(latlng, Math.max(map.getZoom(), 10));
+  }
+
+  function getCurrentPosition(options = {}) {
+    return new Promise((resolve, reject) => {
+      if (!navigator.geolocation) return reject(new Error('geolocation-unavailable'));
+      navigator.geolocation.getCurrentPosition(resolve, reject, {
+        enableHighAccuracy: true,
+        timeout: options.timeout || 12000,
+        maximumAge: options.maximumAge ?? 120000
+      });
+    });
+  }
+
+  async function locateUser({ center = true, reload = true, announce = true } = {}) {
+    if (announce) setStatus('Buscando tu ubicación…', true);
+    try {
+      const pos = await getCurrentPosition();
+      const location = {
+        lat: pos.coords.latitude,
+        lng: pos.coords.longitude,
+        accuracy: pos.coords.accuracy
+      };
+      showUserLocation(location, { center });
+      if (reload) progressiveLoad({ lat: location.lat, lng: location.lng });
+      if (location.accuracy > 5000) {
+        setStatus('Ubicación aproximada · reportes alrededor de tu posición', false);
+        toast('La ubicación es poco precisa. Podés volver a intentar con el botón ◎.', 4500);
+      }
+      return location;
+    } catch (error) {
+      const saved = readSavedLocation();
+      if (saved) {
+        showUserLocation(saved, { center });
+        if (reload) progressiveLoad({ lat: saved.lat, lng: saved.lng });
+        setStatus('Usando tu última ubicación guardada', false);
+        return saved;
+      }
+      setStatus('No pudimos ubicarte · tocá ◎ para intentar otra vez', false);
+      if (announce) toast('Necesitamos tu ubicación para cargar reportes cercanos.', 4500);
+      return null;
+    }
   }
 
   function reportIcon(report) { return L.divIcon({ className: '', html: `<div class="rain-marker">${Math.round(report.millimeters)}<small>&nbsp;mm</small></div>`, iconSize: [48,34], iconAnchor:[24,17] }); }
@@ -166,16 +262,26 @@
   async function openReport() {
     const d=$('[data-report-dialog]'), f=$('[data-report-form]');
     f.reset(); f.elements.observedAt.value=nowLocalInput(); f.elements.intensity.value='moderate'; f.elements.measured.checked=true;
-    const c=map.getCenter(); setReportPoint(c.lat,c.lng,'map',null);
+    const point = userLocation || readSavedLocation();
+    if (point) setReportPoint(point.lat, point.lng, 'geolocation', point.accuracy ?? null);
+    else { const c=map.getCenter(); setReportPoint(c.lat,c.lng,'map',null); }
     $('[data-report-message]').textContent=''; d.showModal(); setTimeout(()=>f.elements.millimeters.focus(),80);
     ensureReportTurnstile();
   }
   function closeReport(){ $('[data-report-dialog]').close(); }
 
   async function useLocation() {
-    if (!navigator.geolocation) return toast('Este dispositivo no ofrece ubicación.');
     $('[data-location-detail]').textContent='Buscando GPS…';
-    navigator.geolocation.getCurrentPosition(pos=>{ const {latitude,longitude,accuracy}=pos.coords; setReportPoint(latitude,longitude,'geolocation',accuracy); map.setView([latitude,longitude], Math.max(map.getZoom(),12)); if (accuracy>5000) toast('Ubicación poco precisa. Podés tocar el mapa para corregirla.',4500); },()=>toast('No se pudo obtener la ubicación. Elegí el punto en el mapa.'),{enableHighAccuracy:true,timeout:10000,maximumAge:60000});
+    try {
+      const pos = await getCurrentPosition({ timeout: 12000, maximumAge: 60000 });
+      const { latitude, longitude, accuracy } = pos.coords;
+      setReportPoint(latitude, longitude, 'geolocation', accuracy);
+      showUserLocation({ lat: latitude, lng: longitude, accuracy }, { center: true });
+      progressiveLoad({ lat: latitude, lng: longitude });
+      if (accuracy > 5000) toast('Ubicación poco precisa. Podés tocar el mapa para corregirla.',4500);
+    } catch {
+      toast('No se pudo obtener la ubicación. Elegí el punto en el mapa.');
+    }
   }
 
   function buildDraft(form) {
@@ -230,9 +336,20 @@
     $('[data-account]').addEventListener('click',openAccount);
     $('[data-close-account]').addEventListener('click',()=> $('[data-account-dialog]').close());
     $('[data-pending-chip]').addEventListener('click',showPending);
-    $('[data-locate]').addEventListener('click',()=>navigator.geolocation?.getCurrentPosition(p=>map.setView([p.coords.latitude,p.coords.longitude],11),()=>toast('No se pudo obtener tu ubicación.'),{enableHighAccuracy:true,timeout:8000,maximumAge:60000}));
-    $$('[data-map-mode]').forEach(btn=>btn.addEventListener('click',()=>{ const mode=btn.dataset.mapMode; if (activeLayer) map.removeLayer(activeLayer); activeLayer=mode==='satellite'?satelliteLayer:basicLayer; activeLayer.addTo(map); $$('[data-map-mode]').forEach(x=>x.classList.toggle('is-active',x===btn)); }));
-    window.addEventListener('online',()=>{ toast('Volvió la conexión.'); const c=map.getCenter(); progressiveLoad({lat:c.lat,lng:c.lng}); updatePendingChip(); });
+    $('[data-locate]').addEventListener('click',()=>locateUser({ center:true, reload:true, announce:true }));
+    $$('[data-map-mode]').forEach(btn=>btn.addEventListener('click',()=>{
+      const mode=btn.dataset.mapMode;
+      if (activeLayer) map.removeLayer(activeLayer);
+      activeLayer=mode==='satellite'?satelliteLayer:basicLayer;
+      activeLayer.addTo(map);
+      $$('[data-map-mode]').forEach(x=>x.classList.toggle('is-active',x===btn));
+    }));
+    window.addEventListener('online',()=>{
+      toast('Volvió la conexión.');
+      const anchor = userLocation || readSavedLocation();
+      if (anchor) progressiveLoad({lat:anchor.lat,lng:anchor.lng});
+      updatePendingChip();
+    });
     window.addEventListener('offline',()=>setStatus('Sin conexión · mostrando datos guardados',false));
   }
 
@@ -241,7 +358,17 @@
   async function boot() {
     bindUi(); initMap(); registerSw(); updatePendingChip();
     await loadCachedReports();
-    const c=map.getCenter(); progressiveLoad({lat:c.lat,lng:c.lng});
+
+    const saved = readSavedLocation();
+    if (saved) {
+      showUserLocation(saved, { center: true });
+      progressiveLoad({ lat: saved.lat, lng: saved.lng });
+    }
+
+    // La ubicación real define el centro de los anillos 25/60/100 km.
+    // Se solicita al iniciar; si el usuario no autoriza, queda la última ubicación guardada.
+    Promise.resolve().then(()=>locateUser({ center:true, reload:true, announce:!saved }));
+
     // Nada de esto bloquea mapa ni reporte.
     Promise.resolve().then(async()=>{ await ensureInstallation(); touchInstallation(); });
     Promise.resolve().then(refreshSession);
