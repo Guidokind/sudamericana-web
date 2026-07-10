@@ -226,7 +226,6 @@
       const message = geoErrorMessage(error);
       setStatus('Necesitamos tu ubicación para cargar la zona cercana', false);
       showLocationGate(message);
-      if (announce) toast(message, 5200);
       return null;
     } finally {
       locationRequestInFlight = false;
@@ -445,11 +444,11 @@
       progressiveLoad({ lat: saved.lat, lng: saved.lng });
     }
 
-    // La ubicación real define el centro de los anillos 25/60/100 km.
-    // En el primer uso no dependemos de un pedido automático: mostramos una acción
-    // explícita para que el permiso nazca de un toque del usuario, más fiable en iPhone.
+    // Nunca solicitamos geolocalización automáticamente al arrancar.
+    // Si existe una posición guardada, sirve para abrir rápido; la posición real
+    // solo se actualiza desde un toque explícito del usuario (botón o control ◎).
     if (saved) {
-      Promise.resolve().then(()=>locateUser({ center:false, reload:true, announce:false, fromGesture:false }));
+      setStatus('Usando tu última ubicación · tocá ◎ para actualizar', false);
     } else {
       showLocationGate();
       setStatus('Tocá “Usar mi ubicación” para cargar reportes cercanos', false);
