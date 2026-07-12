@@ -1015,3 +1015,122 @@
     max-height: calc(100vh - 44px);
   }
 }
+
+
+/* Corrección v1.2: diseño limpio del modal instalar app */
+#install-app-modal.is-open {
+  background: rgba(14, 21, 17, .58);
+}
+
+#install-app-modal .rain-modal-backdrop {
+  background: rgba(14, 21, 17, .58);
+  backdrop-filter: blur(3px);
+}
+
+#install-app-modal .rain-install-card {
+  background: #fffdf7;
+  border: 1px solid rgba(23, 18, 15, .10);
+  border-radius: 28px;
+  box-shadow: 0 28px 90px rgba(0, 0, 0, .32);
+  color: #17120f;
+  padding: 30px;
+  width: min(92vw, 480px);
+}
+
+#install-app-modal .rain-modal-close {
+  align-items: center;
+  background: #f4efe6;
+  border: 1px solid rgba(23, 18, 15, .10);
+  border-radius: 999px;
+  color: #17120f;
+  display: flex;
+  font-size: 20px;
+  font-weight: 800;
+  height: 34px;
+  justify-content: center;
+  line-height: 1;
+  position: absolute;
+  right: 18px;
+  top: 18px;
+  width: 34px;
+}
+
+#install-app-modal .rain-modal-kicker {
+  color: #174c34;
+  font-size: .78rem;
+  font-weight: 900;
+  letter-spacing: .12em;
+  margin-bottom: .55rem;
+  text-transform: uppercase;
+}
+
+#install-app-modal h2 {
+  color: #17120f;
+  font-size: clamp(2rem, 4vw, 3rem);
+  line-height: .98;
+  margin: 0 2.2rem .85rem 0;
+}
+
+#install-app-modal .rain-install-lead {
+  color: #625f58;
+  font-size: 1rem;
+  line-height: 1.45;
+  margin: 0 0 1rem;
+}
+
+#install-app-modal .rain-install-panel {
+  background: #eef6ef;
+  border: 1px solid rgba(23, 76, 52, .14);
+  border-radius: 18px;
+  color: #174c34;
+  font-size: .98rem;
+  font-weight: 800;
+  line-height: 1.45;
+  margin: 1rem 0 1.1rem;
+  padding: 1rem;
+}
+
+#install-app-modal .rain-install-ios {
+  background: #f8f4eb;
+  border: 1px solid rgba(23, 18, 15, .10);
+  border-radius: 18px;
+  color: #3f3b35;
+  margin: 1rem 0;
+  padding: 1rem 1.1rem;
+}
+
+#install-app-modal .rain-install-actions {
+  display: flex;
+  gap: .75rem;
+  justify-content: flex-end;
+  margin-top: 1.2rem;
+}
+
+#install-app-modal .rain-install-actions .btn {
+  min-height: 48px;
+}
+
+@media (max-width: 640px) {
+  #install-app-modal.is-open {
+    align-items: flex-start;
+    padding: max(18px, env(safe-area-inset-top)) 14px 14px;
+  }
+
+  #install-app-modal .rain-install-card {
+    border-radius: 24px;
+    padding: 26px 20px 20px;
+    width: min(94vw, 480px);
+  }
+
+  #install-app-modal h2 {
+    font-size: 2.15rem;
+  }
+
+  #install-app-modal .rain-install-actions {
+    flex-direction: column;
+  }
+
+  #install-app-modal .rain-install-actions .btn {
+    width: 100%;
+  }
+}
