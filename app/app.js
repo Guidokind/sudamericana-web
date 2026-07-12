@@ -3,7 +3,7 @@
   const cfg = window.LLUVIAS_APP_CONFIG || {};
   const API = String(cfg.apiBase || '').replace(/\/$/, '');
   const SITEKEY = String(cfg.turnstileSiteKey || '');
-  const VERSION = String(cfg.appVersion || '0.1.0');
+  const VERSION = String(cfg.appVersion || '0.1.4');
   const DEFAULT_CENTER = { lat: -27.573, lng: -60.715 };
   const RINGS_KM = [25, 60, 100];
   const DB_NAME = 'lluvias-app-v1';
@@ -54,9 +54,11 @@
 
   function initMap() {
     const savedLocation = readSavedLocation();
-    const initial = savedLocation || DEFAULT_CENTER;
+    const savedView = readSavedView();
+    const initial = savedLocation || savedView || DEFAULT_CENTER;
+    const initialZoom = savedLocation ? 10 : (savedView?.zoom || 9);
     map = L.map('app-map', { zoomControl: false, preferCanvas: true, attributionControl: true })
-      .setView([initial.lat, initial.lng], savedLocation ? 10 : 9);
+      .setView([initial.lat, initial.lng], initialZoom);
 
     basicLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 18, updateWhenIdle: true, keepBuffer: 1, attribution: '&copy; OpenStreetMap'
@@ -97,6 +99,24 @@
     return null;
   }
 
+  function readSavedView() {
+    try {
+      const saved = JSON.parse(localStorage.getItem('lluvias:last-view') || 'null');
+      if (saved && Number.isFinite(Number(saved.lat)) && Number.isFinite(Number(saved.lng))) {
+        return {
+          lat: Number(saved.lat),
+          lng: Number(saved.lng),
+          zoom: Number.isFinite(Number(saved.zoom)) ? Number(saved.zoom) : null
+        };
+      }
+    } catch {}
+    return null;
+  }
+
+  function initialMapAnchor() {
+    return readSavedLocation() || readSavedView() || DEFAULT_CENTER;
+  }
+
   function saveLocation(location) {
     localStorage.setItem('lluvias:last-location', JSON.stringify({
       lat: location.lat, lng: location.lng, accuracy: location.accuracy ?? null, savedAt: new Date().toISOString()
@@ -120,23 +140,26 @@
     if (center) map.setView(latlng, Math.max(map.getZoom(), 10));
   }
 
-  function getCurrentPosition(options = {}) {
+  function getCurrentPosition() {
     return new Promise((resolve, reject) => {
       if (!navigator.geolocation) {
         const error = new Error('geolocation-unavailable');
         error.code = 0;
         return reject(error);
       }
-      navigator.geolocation.getCurrentPosition(resolve, reject, {
-        enableHighAccuracy: options.enableHighAccuracy ?? false,
-        timeout: options.timeout ?? 10000,
-        maximumAge: options.maximumAge ?? 300000
-      });
+
+      // Mismo patrón que ya funciona en /lluvias.html:
+      // llamada directa por gesto del usuario, alta precisión, timeout 10 s y cache breve.
+      navigator.geolocation.getCurrentPosition(
+        resolve,
+        reject,
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 120000 }
+      );
     });
   }
 
   function geoErrorMessage(error) {
-    if (Number(error?.code) === 1) return 'La ubicación está bloqueada para este sitio. Revisá el permiso de ubicación del navegador y reintentá.';
+    if (Number(error?.code) === 1) return 'No pudimos obtener tu ubicación. Revisá que Safari tenga permiso de ubicación y tocá de nuevo.';
     if (Number(error?.code) === 2) return 'El teléfono no pudo obtener una posición. Probá de nuevo en un lugar con mejor señal GPS.';
     if (Number(error?.code) === 3) return 'La ubicación tardó demasiado. Tocá de nuevo para reintentar.';
     if (error?.message === 'geolocation-unavailable') return 'Este navegador no ofrece ubicación.';
@@ -196,42 +219,54 @@
     if (locationRequestInFlight) return null;
     locationRequestInFlight = true;
     setLocatingUi(true);
-    if (announce) setStatus('Buscando tu ubicación…', true);
+    if (announce) setStatus('Obteniendo ubicación…', true);
+
     try {
-      const pos = await getCurrentPosition({
-        enableHighAccuracy: false,
-        timeout: fromGesture ? 12000 : 7000,
-        maximumAge: 300000
-      });
+      const pos = await getCurrentPosition();
+      const accuracy = Number(pos.coords.accuracy);
       const location = {
         lat: pos.coords.latitude,
         lng: pos.coords.longitude,
-        accuracy: pos.coords.accuracy
+        accuracy: Number.isFinite(accuracy) ? accuracy : null
       };
+
       hideLocationGate();
       showUserLocation(location, { center });
-      if (reload) progressiveLoad({ lat: location.lat, lng: location.lng });
-      setStatus(location.accuracy > 5000 ? 'Ubicación aproximada · afinando GPS…' : 'Ubicación encontrada', false);
-      Promise.resolve().then(() => refineUserLocation(location, { center: false, reload }));
+
+      if (reload) {
+        progressiveLoad({ lat: location.lat, lng: location.lng });
+      }
+
+      setStatus(
+        Number(location.accuracy) > 1000
+          ? 'Ubicación aproximada. Revisá el punto antes de publicar.'
+          : 'Ubicación detectada',
+        false
+      );
+
       return location;
     } catch (error) {
-      const saved = readSavedLocation();
-      if (saved) {
-        showUserLocation(saved, { center });
-        if (reload) progressiveLoad({ lat: saved.lat, lng: saved.lng });
-        setStatus('Usando tu última ubicación guardada', false);
-        if (fromGesture) showLocationGate(geoErrorMessage(error));
-        return saved;
-      }
       const message = geoErrorMessage(error);
-      setStatus('Necesitamos tu ubicación para cargar la zona cercana', false);
-      showLocationGate(message);
+      const fallback = readSavedLocation() || readSavedView() || DEFAULT_CENTER;
+
+      // El GPS no debe dejar la app vacía: mantenemos/cargamos la zona visible.
+      if (fallback && reload) {
+        progressiveLoad({ lat: fallback.lat, lng: fallback.lng });
+      }
+
+      setStatus(reportsById.size ? 'Mostrando reportes de la zona' : 'No pudimos obtener tu ubicación', false);
+      if (fromGesture) {
+        showLocationGate(message);
+        toast(message, 4200);
+      }
+
       return null;
     } finally {
       locationRequestInFlight = false;
       setLocatingUi(false);
     }
   }
+
 
   function reportIcon(report) { return L.divIcon({ className: '', html: `<div class="rain-marker">${Math.round(report.millimeters)}<small>&nbsp;mm</small></div>`, iconSize: [48,34], iconAnchor:[24,17] }); }
   function upsertReport(report, persist = true) {
@@ -425,8 +460,8 @@
     }));
     window.addEventListener('online',()=>{
       toast('Volvió la conexión.');
-      const anchor = userLocation || readSavedLocation();
-      if (anchor) progressiveLoad({lat:anchor.lat,lng:anchor.lng});
+      const anchor = userLocation || readSavedLocation() || readSavedView() || DEFAULT_CENTER;
+      progressiveLoad({lat:anchor.lat,lng:anchor.lng});
       updatePendingChip();
     });
     window.addEventListener('offline',()=>setStatus('Sin conexión · mostrando datos guardados',false));
@@ -435,28 +470,40 @@
   async function registerSw(){ if ('serviceWorker' in navigator) try{ await navigator.serviceWorker.register('./sw.js',{scope:'./'}); }catch{} }
 
   async function boot() {
-    bindUi(); initMap(); registerSw(); updatePendingChip();
+    bindUi();
+    initMap();
+    registerSw();
+    updatePendingChip();
+
     await loadCachedReports();
 
-    const saved = readSavedLocation();
-    if (saved) {
-      showUserLocation(saved, { center: true });
-      progressiveLoad({ lat: saved.lat, lng: saved.lng });
+    const savedLocation = readSavedLocation();
+    const savedView = readSavedView();
+    const anchor = savedLocation || savedView || DEFAULT_CENTER;
+
+    if (savedLocation) {
+      showUserLocation(savedLocation, { center: true });
     }
 
-    // Nunca solicitamos geolocalización automáticamente al arrancar.
-    // Si existe una posición guardada, sirve para abrir rápido; la posición real
-    // solo se actualiza desde un toque explícito del usuario (botón o control ◎).
-    if (saved) {
+    // Regla Sprint 1.4:
+    // Los reportes siempre cargan aunque el GPS falle o el usuario no haya dado permiso.
+    // Primero usamos ubicación guardada, luego última zona vista y por último Villa Ángela.
+    progressiveLoad({ lat: anchor.lat, lng: anchor.lng });
+
+    if (savedLocation) {
       setStatus('Usando tu última ubicación · tocá ◎ para actualizar', false);
+    } else if (savedView) {
+      showLocationGate();
+      setStatus('Mostrando tu última zona vista · tocá “Usar mi ubicación” para ajustar', false);
     } else {
       showLocationGate();
-      setStatus('Tocá “Usar mi ubicación” para cargar reportes cercanos', false);
+      setStatus('Mostrando zona Villa Ángela · tocá “Usar mi ubicación” para ajustar', false);
     }
 
     // Nada de esto bloquea mapa ni reporte.
     Promise.resolve().then(async()=>{ await ensureInstallation(); touchInstallation(); });
     Promise.resolve().then(refreshSession);
   }
+
   if (document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot,{once:true}); else boot();
 })();

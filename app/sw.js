@@ -1,5 +1,5 @@
-const CACHE='lluvias-shell-v0.1.3';
-const SHELL=['./','./index.html','./app.css','./app.js','./manifest.webmanifest','./icons/lluvias-192.png','./icons/lluvias-512.png'];
+const CACHE='lluvias-shell-v0.1.4';
+const SHELL=['./','./index.html','./app.css','./app.js','./manifest.webmanifest','./icons/lluvias-192.png','./icons/lluvias-512.png','./icons/apple-touch-icon.png','./icons/favicon-32.png','./icons/share-preview.png'];
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL)).then(()=>self.skipWaiting()));});
 self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('lluvias-shell-')&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});
 self.addEventListener('fetch',event=>{
