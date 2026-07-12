@@ -2127,6 +2127,12 @@
     els.modal.classList.add('is-open');
     els.modal.setAttribute('aria-hidden', 'false');
     document.body.classList.add('rain-modal-open');
+
+    // v1.1: asegurar que el modal quede visible aunque la página esté scrolleada abajo.
+    window.setTimeout(() => {
+      els.modal.scrollTop = 0;
+      els.modal.querySelector('.rain-modal-card')?.scrollIntoView({ block: 'center', inline: 'center' });
+    }, 0);
   }
 
   function closeInstallModal() {

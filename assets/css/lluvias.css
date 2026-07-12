@@ -970,3 +970,48 @@
     width: 100%;
   }
 }
+
+
+/* Corrección v1.1: modal instalar app siempre visible en pantalla */
+#install-app-modal {
+  display: none;
+}
+
+#install-app-modal.is-open {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  padding: 18px;
+}
+
+#install-app-modal .rain-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(14, 21, 17, .55);
+  backdrop-filter: blur(2px);
+}
+
+#install-app-modal .rain-modal-card {
+  position: relative;
+  z-index: 1;
+  width: min(94vw, 520px);
+  max-height: min(86vh, 720px);
+  overflow: auto;
+  margin: 0;
+  transform: translateY(0);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, .28);
+}
+
+@media (max-width: 640px) {
+  #install-app-modal.is-open {
+    align-items: flex-start;
+    padding-top: max(22px, env(safe-area-inset-top));
+  }
+
+  #install-app-modal .rain-modal-card {
+    max-height: calc(100vh - 44px);
+  }
+}
