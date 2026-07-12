@@ -899,3 +899,74 @@
   .rain-own-report-meta { justify-content: flex-start; }
 }
 
+
+
+/* CTA de instalación de la app Lluvias */
+.rain-install-button {
+  white-space: nowrap;
+}
+
+.rain-install-card {
+  max-width: 520px;
+}
+
+.rain-install-lead {
+  color: var(--muted, #625f58);
+  font-size: 1rem;
+  line-height: 1.45;
+  margin: 0 0 1rem;
+}
+
+.rain-install-panel {
+  background: #f1f6f0;
+  border: 1px solid rgba(33, 76, 51, .16);
+  border-radius: 18px;
+  color: #274d34;
+  font-weight: 700;
+  line-height: 1.45;
+  margin: 1rem 0;
+  padding: 1rem;
+}
+
+.rain-install-panel p {
+  margin: 0;
+}
+
+.rain-install-ios {
+  background: #fffdf8;
+  border: 1px solid rgba(23, 18, 15, .12);
+  border-radius: 18px;
+  color: #3f3b35;
+  margin: 1rem 0;
+  padding: 1rem 1.1rem;
+}
+
+.rain-install-ios ol {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.rain-install-ios li + li {
+  margin-top: .45rem;
+}
+
+.rain-install-actions {
+  display: flex;
+  gap: .75rem;
+  justify-content: flex-end;
+  margin-top: 1.25rem;
+}
+
+@media (max-width: 640px) {
+  .rain-hero-actions {
+    align-items: stretch;
+  }
+
+  .rain-install-actions {
+    flex-direction: column;
+  }
+
+  .rain-install-actions .btn {
+    width: 100%;
+  }
+}

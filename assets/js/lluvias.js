@@ -2053,6 +2053,105 @@
     host.innerHTML = rankingCache.map(item => rankRow(item, false)).join('');
   }
 
+
+  // =========================================================
+  // INSTALAR / ABRIR APP LLUVIAS
+  // =========================================================
+  let deferredInstallPrompt = null;
+
+  const APP_URL = '/app/';
+
+  function isIosDevice() {
+    return /iphone|ipad|ipod/i.test(navigator.userAgent || '');
+  }
+
+  function isStandaloneMode() {
+    return (
+      window.matchMedia?.('(display-mode: standalone)').matches ||
+      window.navigator.standalone === true
+    );
+  }
+
+  function installModalElements() {
+    const modal = document.getElementById('install-app-modal');
+    return {
+      modal,
+      panel: modal?.querySelector('[data-install-state]'),
+      message: modal?.querySelector('[data-install-message]'),
+      ios: modal?.querySelector('[data-install-ios]'),
+      primary: modal?.querySelector('[data-install-primary]'),
+      closeButtons: modal ? Array.from(modal.querySelectorAll('[data-install-close]')) : []
+    };
+  }
+
+  function openInstallModal() {
+    const els = installModalElements();
+    if (!els.modal) {
+      window.location.href = APP_URL;
+      return;
+    }
+
+    const standalone = isStandaloneMode();
+    const ios = isIosDevice();
+
+    els.ios.hidden = true;
+    els.primary.textContent = 'Abrir app';
+    els.primary.onclick = () => { window.location.href = APP_URL; };
+
+    if (standalone) {
+      els.message.textContent = 'Lluvias ya está abierta como app.';
+      els.primary.textContent = 'Abrir app';
+    } else if (deferredInstallPrompt) {
+      els.message.textContent = 'Podés instalar Lluvias para abrirla más rápido desde el teléfono.';
+      els.primary.textContent = 'Instalar';
+      els.primary.onclick = async () => {
+        const promptEvent = deferredInstallPrompt;
+        deferredInstallPrompt = null;
+        promptEvent.prompt();
+        await promptEvent.userChoice.catch(() => null);
+        closeInstallModal();
+      };
+    } else if (ios) {
+      els.message.textContent = 'En iPhone se instala desde el menú Compartir de Safari.';
+      els.ios.hidden = false;
+      els.primary.textContent = 'Abrir app ahora';
+    } else {
+      els.message.textContent = 'Abrí la app de Lluvias. Si tu navegador permite instalarla, verás la opción de instalación.';
+      els.primary.textContent = 'Abrir app';
+    }
+
+    els.closeButtons.forEach(button => {
+      button.onclick = closeInstallModal;
+    });
+
+    els.modal.classList.add('is-open');
+    els.modal.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('rain-modal-open');
+  }
+
+  function closeInstallModal() {
+    const { modal } = installModalElements();
+    if (!modal) return;
+    modal.classList.remove('is-open');
+    modal.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('rain-modal-open');
+  }
+
+  window.addEventListener('beforeinstallprompt', (event) => {
+    event.preventDefault();
+    deferredInstallPrompt = event;
+    const button = document.querySelector('[data-install-lluvias-app]');
+    if (button) button.textContent = 'Instalar app';
+  });
+
+  window.addEventListener('appinstalled', () => {
+    deferredInstallPrompt = null;
+    const button = document.querySelector('[data-install-lluvias-app]');
+    if (button) button.textContent = 'Abrir app';
+  });
+
+  document.querySelector('[data-install-lluvias-app]')?.addEventListener('click', openInstallModal);
+
   window.addEventListener('load', () => {
     setTimeout(() => {
       if (reportDialog?.open) renderReportTurnstile();

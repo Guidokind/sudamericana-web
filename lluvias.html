@@ -18,6 +18,7 @@
   <meta name="theme-color" content="#f6f3ed">
   <link rel="canonical" href="https://sudamericanasrl.com/lluvias.html">
 
+  <link rel="manifest" href="/app/manifest.webmanifest">
   <link rel="icon" href="/assets/img/favicon.ico" sizes="any">
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/img/favicon-32x32.png">
   <link rel="apple-touch-icon" href="/assets/img/apple-touch-icon.png">
@@ -118,6 +119,7 @@
         <button class="btn btn-primary" type="button" data-open-report>+ Reportar lluvia</button>
         <button class="btn btn-secondary" type="button" data-use-location>Ver mi zona</button>
         <button class="btn btn-secondary" type="button" data-share-rain>Compartir</button>
+        <button class="btn btn-secondary rain-install-button" type="button" data-install-lluvias-app>Instalar app</button>
       </div>
     </section>
 
@@ -296,5 +298,33 @@
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
   <script src="assets/js/main.js"></script>
   <script src="assets/js/lluvias.js"></script>
+
+  <div class="rain-modal" id="install-app-modal" aria-hidden="true">
+    <div class="rain-modal-backdrop" data-install-close></div>
+    <div class="rain-modal-card rain-install-card" role="dialog" aria-modal="true" aria-labelledby="install-app-title">
+      <button class="rain-modal-close" type="button" data-install-close aria-label="Cerrar">×</button>
+      <div class="rain-modal-kicker">APP LLUVIAS</div>
+      <h2 id="install-app-title">Instalar Lluvias</h2>
+      <p class="rain-install-lead">Usala como app para abrir el mapa y reportar más rápido desde el teléfono.</p>
+
+      <div class="rain-install-panel" data-install-state="ready">
+        <p data-install-message>Preparando instalación…</p>
+      </div>
+
+      <div class="rain-install-ios" data-install-ios hidden>
+        <ol>
+          <li>Tocá el botón <strong>Compartir</strong> de Safari.</li>
+          <li>Elegí <strong>Agregar a inicio</strong>.</li>
+          <li>Confirmá con <strong>Agregar</strong>.</li>
+        </ol>
+      </div>
+
+      <div class="rain-install-actions">
+        <button class="btn btn-primary" type="button" data-install-primary>Abrir app</button>
+        <button class="btn btn-secondary" type="button" data-install-close>Cerrar</button>
+      </div>
+    </div>
+  </div>
+
 </body>
 </html>
