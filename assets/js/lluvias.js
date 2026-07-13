@@ -54,6 +54,8 @@
   let googleInitialized = false;
   let pendingOpenReportAfterProfile = false;
   let rankingCache = [];
+  let rankingInitialLoadStarted = false;
+  let rankingObserver = null;
 
   const DEFAULT_CENTER = [-27.573, -60.715];
   const DEVICE_STORAGE_KEY = 'sudamericana_rain_device_id';
@@ -1408,9 +1410,26 @@
       else openAuthDialog();
     });
 
-    document.querySelector('[data-open-ranking]')?.addEventListener('click', () => {
+    document.querySelector('[data-open-ranking]')?.addEventListener('click', async () => {
+      const dialog = document.querySelector('[data-ranking-dialog]');
+      const fullHost = document.querySelector('[data-ranking-full]');
+
+      if (!rankingInitialLoadStarted) {
+        rankingInitialLoadStarted = true;
+        rankingObserver?.disconnect();
+        rankingObserver = null;
+
+        if (fullHost) {
+          fullHost.innerHTML = '<div class="rain-ranking-empty">Cargando ranking…</div>';
+        }
+
+        dialog?.showModal();
+        await loadRanking({ silent: true });
+        return;
+      }
+
       renderFullRanking();
-      document.querySelector('[data-ranking-dialog]')?.showModal();
+      dialog?.showModal();
     });
 
     document.querySelectorAll('[data-close-auth]').forEach(el => el.addEventListener('click', () => document.querySelector('[data-auth-dialog]')?.close()));
@@ -2109,6 +2128,36 @@
     `;
   }
 
+  function scheduleRankingLoad() {
+    const section = document.querySelector('[data-ranking-section]');
+    if (!section || rankingInitialLoadStarted) return;
+
+    const startLoad = () => {
+      if (rankingInitialLoadStarted) return;
+      rankingInitialLoadStarted = true;
+      rankingObserver?.disconnect();
+      rankingObserver = null;
+      loadRanking({ silent: true });
+    };
+
+    if ('IntersectionObserver' in window) {
+      rankingObserver = new IntersectionObserver(entries => {
+        if (entries.some(entry => entry.isIntersecting)) {
+          startLoad();
+        }
+      }, {
+        rootMargin: '500px 0px',
+        threshold: 0
+      });
+
+      rankingObserver.observe(section);
+      return;
+    }
+
+    // Compatibilidad con navegadores antiguos.
+    window.setTimeout(startLoad, 2500);
+  }
+
   async function loadRanking({ silent = false } = {}) {
     try {
       const data = await apiFetch('/ranking');
@@ -2260,11 +2309,11 @@
   injectCommunityUi();
   prepareSubmissionUi();
   getOrCreateDeviceId();
+  scheduleRankingLoad();
 
   Promise.all([
     refreshSession({ silent: true }),
-    loadReports({ fit: false }),
-    loadRanking({ silent: true })
+    loadReports({ fit: false })
   ]).catch(console.error);
 
   setInterval(() => loadReports(), 120000);
