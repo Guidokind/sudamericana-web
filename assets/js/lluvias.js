@@ -63,15 +63,70 @@
     maxZoom: 19
   }).setView(DEFAULT_CENTER, 8);
 
-  L.tileLayer(
-    'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-    { maxZoom: 19, attribution: 'Imagery © Esri' }
-  ).addTo(map);
-
-  L.tileLayer(
+  const basicMapLayer = L.tileLayer(
     'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-    { maxZoom: 19, opacity: 0.55, attribution: '&copy; OpenStreetMap contributors' }
-  ).addTo(map);
+    {
+      maxZoom: 19,
+      updateWhenIdle: true,
+      keepBuffer: 1,
+      attribution: '&copy; OpenStreetMap contributors'
+    }
+  );
+
+  let satelliteMapLayer = null;
+  let activeMapLayer = basicMapLayer.addTo(map);
+
+  function getSatelliteMapLayer() {
+    if (satelliteMapLayer) return satelliteMapLayer;
+
+    const imagery = L.tileLayer(
+      'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+      {
+        maxZoom: 19,
+        updateWhenIdle: true,
+        keepBuffer: 1,
+        attribution: 'Imagery &copy; Esri'
+      }
+    );
+
+    const references = L.tileLayer(
+      'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
+      {
+        maxZoom: 19,
+        updateWhenIdle: true,
+        keepBuffer: 1,
+        opacity: 0.95,
+        attribution: 'Reference &copy; Esri'
+      }
+    );
+
+    satelliteMapLayer = L.layerGroup([imagery, references]);
+    return satelliteMapLayer;
+  }
+
+  function setRainMapMode(mode) {
+    const nextMode = mode === 'satellite' ? 'satellite' : 'basic';
+    const nextLayer = nextMode === 'satellite'
+      ? getSatelliteMapLayer()
+      : basicMapLayer;
+
+    if (activeMapLayer !== nextLayer) {
+      map.removeLayer(activeMapLayer);
+      activeMapLayer = nextLayer.addTo(map);
+    }
+
+    document.querySelectorAll('[data-rain-map-mode]').forEach(button => {
+      const active = button.dataset.rainMapMode === nextMode;
+      button.classList.toggle('is-active', active);
+      button.setAttribute('aria-pressed', String(active));
+    });
+  }
+
+  document.querySelectorAll('[data-rain-map-mode]').forEach(button => {
+    button.addEventListener('click', () => {
+      setRainMapMode(button.dataset.rainMapMode);
+    });
+  });
 
   markersLayer.addTo(map);
 
