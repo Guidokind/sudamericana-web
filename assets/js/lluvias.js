@@ -42,6 +42,7 @@
   let submissionMode = 'anonymous';
   let reportTurnstileWidgetId = null;
   let authTurnstileWidgetId = null;
+  let turnstileScriptPromise = null;
   let markersLayer = L.layerGroup();
   let loadController = null;
 
@@ -627,16 +628,36 @@
     try { return window.turnstile.getResponse(widgetId) || ''; } catch { return ''; }
   }
 
-  function waitForTurnstile(callback, attempts = 30) {
-    if (window.turnstile) {
-      callback();
-      return;
-    }
-    if (attempts <= 0) return;
-    setTimeout(() => waitForTurnstile(callback, attempts - 1), 150);
+  function ensureTurnstileLoaded() {
+    if (window.turnstile) return Promise.resolve(window.turnstile);
+    if (turnstileScriptPromise) return turnstileScriptPromise;
+
+    turnstileScriptPromise = new Promise((resolve, reject) => {
+      const existing = document.querySelector('script[data-turnstile-script]');
+
+      if (existing) {
+        existing.addEventListener('load', () => resolve(window.turnstile), { once: true });
+        existing.addEventListener('error', reject, { once: true });
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+      script.async = true;
+      script.defer = true;
+      script.dataset.turnstileScript = '1';
+      script.onload = () => resolve(window.turnstile);
+      script.onerror = () => {
+        turnstileScriptPromise = null;
+        reject(new Error('No se pudo cargar Turnstile.'));
+      };
+      document.head.appendChild(script);
+    });
+
+    return turnstileScriptPromise;
   }
 
-  function renderReportTurnstile() {
+  async function renderReportTurnstile() {
     const host = document.querySelector('[data-turnstile-host]');
     if (!host) return;
 
@@ -645,16 +666,21 @@
       return;
     }
 
-    waitForTurnstile(() => {
+    try {
+      await ensureTurnstileLoaded();
+
       if (reportTurnstileWidgetId !== null) {
         window.turnstile.reset(reportTurnstileWidgetId);
         return;
       }
+
       reportTurnstileWidgetId = window.turnstile.render(host, {
         sitekey: TURNSTILE_SITEKEY,
         theme: 'light'
       });
-    });
+    } catch (error) {
+      host.innerHTML = '<p class="rain-form-note">No pudimos cargar la verificación. Revisá tu conexión y reintentá.</p>';
+    }
   }
 
   function resetReportTurnstile() {
@@ -663,7 +689,7 @@
     }
   }
 
-  function renderAuthTurnstile() {
+  async function renderAuthTurnstile() {
     const host = document.querySelector('[data-auth-turnstile-host]');
     if (!host) return;
 
@@ -672,16 +698,21 @@
       return;
     }
 
-    waitForTurnstile(() => {
+    try {
+      await ensureTurnstileLoaded();
+
       if (authTurnstileWidgetId !== null) {
         window.turnstile.reset(authTurnstileWidgetId);
         return;
       }
+
       authTurnstileWidgetId = window.turnstile.render(host, {
         sitekey: TURNSTILE_SITEKEY,
         theme: 'light'
       });
-    });
+    } catch (error) {
+      host.innerHTML = '<p class="rain-form-note">No pudimos cargar la verificación. Revisá tu conexión y reintentá.</p>';
+    }
   }
 
   function resetAuthTurnstile() {
