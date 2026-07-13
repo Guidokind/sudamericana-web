@@ -1306,6 +1306,13 @@
 
     bindCommunityEvents();
     renderAccountButton();
+
+    // Informa a main.js que el botón real ya tiene sus eventos conectados.
+    const readyAccountButton = document.querySelector('[data-account-button]');
+    if (readyAccountButton) {
+      readyAccountButton.dataset.accountReady = '1';
+      window.dispatchEvent(new CustomEvent('lluvias:account-ready'));
+    }
   }
 
   function bindCommunityEvents() {

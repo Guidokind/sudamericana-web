@@ -350,6 +350,67 @@
     });
   }
 
+  function waitForRainAccountReady(
+    button,
+    timeoutMs = 5000
+  ) {
+    return new Promise((resolve) => {
+      if (
+        button?.dataset.accountReady === '1'
+      ) {
+        resolve();
+        return;
+      }
+
+      let settled = false;
+
+      const finish = () => {
+        if (settled) return;
+        settled = true;
+        window.removeEventListener(
+          'lluvias:account-ready',
+          finish
+        );
+        resolve();
+      };
+
+      window.addEventListener(
+        'lluvias:account-ready',
+        finish,
+        { once: true }
+      );
+
+      window.setTimeout(finish, timeoutMs);
+    });
+  }
+
+  function waitForRainAccountResolved(
+    button,
+    timeoutMs = 5000
+  ) {
+    return new Promise((resolve) => {
+      const startedAt = Date.now();
+
+      const check = () => {
+        const pending =
+          button?.hasAttribute('aria-busy') ||
+          button?.classList.contains('is-auth-pending');
+
+        if (
+          !pending ||
+          Date.now() - startedAt > timeoutMs
+        ) {
+          resolve();
+          return;
+        }
+
+        window.setTimeout(check, 100);
+      };
+
+      check();
+    });
+  }
+
   function waitForRainSessionState(
     button,
     shouldBeLoggedIn,
@@ -386,15 +447,13 @@
       return;
     }
 
-    await waitForRainSessionState(
-      button,
-      Boolean(currentSessionUser)
-    );
+    // El botón puede existir en el HTML antes de que lluvias.js
+    // conecte su evento y termine de resolver la sesión.
+    await waitForRainAccountReady(button);
+    await waitForRainAccountResolved(button);
 
-    // Ejecuta el botón REAL administrado
-    // por lluvias.js:
-    //
-    // - sin sesión -> login Google/email
+    // Ejecuta el botón REAL administrado por lluvias.js:
+    // - sin sesión -> login
     // - con sesión -> Mi cuenta
     button.click();
   }
@@ -407,16 +466,7 @@
         isRainPage() &&
         window.location.hash.toLowerCase() === '#cuenta'
       ) {
-        const button = await waitForRainAccountBridge();
-
-        if (button) {
-          await waitForRainSessionState(
-            button,
-            isRainButtonLoggedIn(button)
-          );
-
-          button.click();
-        }
+        await openRealRainAccount();
 
         if (window.history?.replaceState) {
           window.history.replaceState(
