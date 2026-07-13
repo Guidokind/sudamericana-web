@@ -1134,3 +1134,59 @@
     width: 100%;
   }
 }
+
+
+/* Fase 3: selector de mapa básico / satélite */
+.rain-map-modes {
+  position: absolute;
+  z-index: 520;
+  top: 18px;
+  right: 18px;
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid rgba(23, 18, 15, .12);
+  border-radius: 999px;
+  background: rgba(255, 253, 248, .94);
+  box-shadow: 0 12px 34px rgba(26, 22, 18, .12);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.rain-map-modes button {
+  appearance: none;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink-soft);
+  cursor: pointer;
+  font: inherit;
+  font-size: .82rem;
+  font-weight: 800;
+  line-height: 1;
+  min-height: 36px;
+  padding: 0 13px;
+}
+
+.rain-map-modes button:hover,
+.rain-map-modes button:focus-visible {
+  color: var(--green-700);
+}
+
+.rain-map-modes button.is-active {
+  background: var(--green-700);
+  color: #fff;
+  box-shadow: 0 5px 14px rgba(23, 76, 52, .22);
+}
+
+@media (max-width: 640px) {
+  .rain-map-modes {
+    top: 64px;
+    right: 12px;
+  }
+
+  .rain-map-modes button {
+    min-height: 34px;
+    padding-inline: 11px;
+  }
+}
