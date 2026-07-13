@@ -8,156 +8,323 @@
   'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
   })(window,document,'script','dataLayer','GTM-TZTPRRHF');</script>
   <!-- End Google Tag Manager -->
+
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Aplicaciones aéreas agrícolas con herbicidas, fungicidas e insecticidas. Sudamericana Trabajo Aéreo, con base en Villa Ángela, Chaco.">
-  <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
-  <title>Aplicaciones Aéreas Agrícolas en Chaco | Sudamericana</title>
+
+  <title>Lluvias reportadas | Sudamericana Trabajo Aéreo</title>
+  <meta name="description" content="Mapa colaborativo de lluvias reportadas por productores, colonos y usuarios rurales. Consultá milímetros, estado de la lluvia y reportes recientes.">
+  <meta name="robots" content="index,follow,max-image-preview:large">
   <meta name="theme-color" content="#f6f3ed">
-  <link rel="canonical" href="https://sudamericanasrl.com/aplicaciones-aereas-agricolas.html">
+  <link rel="canonical" href="https://sudamericanasrl.com/lluvias.html">
+
+  <link rel="manifest" href="/app/manifest.webmanifest">
   <link rel="icon" href="/assets/img/favicon.ico" sizes="any">
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/img/favicon-32x32.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/assets/img/favicon-16x16.png">
   <link rel="apple-touch-icon" href="/assets/img/apple-touch-icon.png">
   <link rel="manifest" href="/site.webmanifest">
+
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Sudamericana Trabajo Aéreo">
-  <meta property="og:title" content="Aplicaciones Aéreas Agrícolas en Chaco | Sudamericana">
-  <meta property="og:description" content="Aplicaciones aéreas agrícolas con herbicidas, fungicidas e insecticidas. Sudamericana Trabajo Aéreo, con base en Villa Ángela, Chaco.">
-  <meta property="og:url" content="https://sudamericanasrl.com/aplicaciones-aereas-agricolas.html">
+  <meta property="og:title" content="Lluvias reportadas | Sudamericana">
+  <meta property="og:description" content="Mapa colaborativo de lluvias recientes compartidas por usuarios rurales.">
+  <meta property="og:url" content="https://sudamericanasrl.com/lluvias.html">
   <meta property="og:image" content="https://sudamericanasrl.com/assets/img/preview-social.png">
-  <meta property="og:image:width" content="1200">
-  <meta property="og:image:height" content="630">
-  <meta property="og:image:alt" content="Logo de Sudamericana Trabajo Aéreo">
   <meta property="og:locale" content="es_AR">
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Aplicaciones Aéreas Agrícolas en Chaco | Sudamericana">
-  <meta name="twitter:description" content="Aplicaciones aéreas agrícolas con herbicidas, fungicidas e insecticidas. Sudamericana Trabajo Aéreo, con base en Villa Ángela, Chaco.">
-  <meta name="twitter:image" content="https://sudamericanasrl.com/assets/img/preview-social.png">
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
   <link rel="stylesheet" href="assets/css/styles.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="assets/css/lluvias.css">
+
   <script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@graph": [
-    {
-      "@type": "LocalBusiness",
-      "@id": "https://sudamericanasrl.com/#business",
+  {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "name": "Lluvias reportadas",
+    "url": "https://sudamericanasrl.com/lluvias.html",
+    "description": "Mapa colaborativo de lluvias recientes reportadas por usuarios rurales.",
+    "isPartOf": {
+      "@type": "WebSite",
       "name": "Sudamericana Trabajo Aéreo",
-      "alternateName": "Sudamericana SRL",
-      "url": "https://sudamericanasrl.com/",
-      "logo": "https://sudamericanasrl.com/assets/img/logo-sudamericana.png",
-      "image": "https://sudamericanasrl.com/assets/img/preview-social.png",
-      "telephone": "+54 3735 62-5303",
-      "email": "stachaco@gmail.com",
-      "address": {
-        "@type": "PostalAddress",
-        "streetAddress": "Ruta 95 km 1024",
-        "addressLocality": "Villa Ángela",
-        "addressRegion": "Chaco",
-        "addressCountry": "AR"
-      }
+      "url": "https://sudamericanasrl.com/"
     },
-    {
-      "@type": "Service",
-      "@id": "https://sudamericanasrl.com/aplicaciones-aereas-agricolas.html#service",
-      "name": "Aplicaciones aéreas agrícolas",
-      "url": "https://sudamericanasrl.com/aplicaciones-aereas-agricolas.html",
-      "description": "Aplicaciones aéreas agrícolas con herbicidas, fungicidas e insecticidas, coordinadas según objetivo, superficie, ubicación y condiciones operativas.",
-      "provider": {
-        "@id": "https://sudamericanasrl.com/#business"
-      },
-      "areaServed": {
-        "@type": "AdministrativeArea",
-        "name": "Chaco, Argentina"
-      }
-    },
-    {
-      "@type": "BreadcrumbList",
-      "itemListElement": [
-        {
-          "@type": "ListItem",
-          "position": 1,
-          "name": "Inicio",
-          "item": "https://sudamericanasrl.com/"
-        },
-        {
-          "@type": "ListItem",
-          "position": 2,
-          "name": "Servicios",
-          "item": "https://sudamericanasrl.com/servicios.html"
-        },
-        {
-          "@type": "ListItem",
-          "position": 3,
-          "name": "Aplicaciones aéreas agrícolas",
-          "item": "https://sudamericanasrl.com/aplicaciones-aereas-agricolas.html"
-        }
-      ]
-    }
-  ]
-}
+    "inLanguage": "es-AR"
+  }
   </script>
+
+  <script>
+    window.SUDAMERICANA_LLUVIAS = {
+      apiBase: 'https://lluvias-api.sudamericanasrl.com',
+      turnstileSiteKey: '0x4AAAAAADw9UWpVAQYqzGRw'
+    };
+  </script>
+
   <script type="text/javascript">
-    (function(c,l,a,r,i,t,y){
-        c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
-        t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
-        y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
-    })(window, document, "clarity", "script", "xfdhyn50o7");
+  (function(c,l,a,r,i,t,y){
+    c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+    t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+    y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+  })(window, document, "clarity", "script", "xfdhyn50o7");
   </script>
 </head>
+
 <body>
   <!-- Google Tag Manager (noscript) -->
   <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TZTPRRHF"
   height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   <!-- End Google Tag Manager (noscript) -->
+
   <a class="skip-link" href="#contenido">Saltar al contenido</a>
-  <header class="site-header"><div class="site-shell nav-wrap">
-    <a class="brand" href="index.html" aria-label="Sudamericana Trabajo Aéreo, inicio"><img src="assets/img/logo-sudamericana.png" width="420" height="221" alt="Sudamericana Trabajo Aéreo"></a>
-    <button class="menu-toggle" type="button" data-menu-toggle aria-label="Abrir menú" aria-expanded="false">☰</button>
-    <nav class="main-nav" data-nav aria-label="Navegación principal"><a href="servicios.html" aria-current="page">Servicios</a><a href="clima.html">Clima</a><a href="lluvias.html">Lluvias</a><a href="presupuestos.html">Contacto</a></nav>
-  </div></header>
+
+  <header class="site-header">
+    <div class="site-shell nav-wrap">
+      <a class="brand" href="index.html" aria-label="Sudamericana Trabajo Aéreo, inicio">
+        <img src="assets/img/logo-sudamericana.png" width="420" height="221" alt="Sudamericana Trabajo Aéreo">
+      </a>
+
+      <button class="menu-toggle" type="button" data-menu-toggle aria-label="Abrir menú" aria-expanded="false">☰</button>
+
+      <nav class="main-nav" data-nav aria-label="Navegación principal">
+        <a href="servicios.html">Servicios</a>
+        <a href="clima.html">Clima</a>
+        <a href="lluvias.html" aria-current="page">Lluvias</a>
+        <a href="presupuestos.html">Contacto</a>
+        <button
+          class="btn btn-secondary rain-account-button rain-account-button-nav is-auth-pending"
+          type="button"
+          data-account-button
+          aria-label="Cuenta de colaborador"
+          aria-busy="true"
+        >
+          <span class="rain-account-dot" aria-hidden="true"></span>
+          <span>Ingresar</span>
+        </button>
+      </nav>
+    </div>
+  </header>
 
   <main id="contenido">
-    <section class="site-shell page-hero reveal">
-      <span class="eyebrow">Trabajo aéreo agrícola</span>
-      <h1>Aplicaciones aéreas agrícolas.</h1>
-      <p class="lead">Aplicaciones con herbicidas, fungicidas e insecticidas, coordinadas desde Villa Ángela, Chaco, según el objetivo y las condiciones del trabajo.</p>
-    </section>
-
-    <section class="site-shell section service-detail-layout">
-      <div class="service-detail-main reveal">
-        <h2>Trabajo coordinado según el objetivo del lote.</h2>
-        <p>Una aplicación aérea agrícola requiere ordenar la consulta antes de definir una operación: localidad, superficie aproximada, cultivo, objetivo y momento esperado. Con esa base se evalúan disponibilidad, logística y condiciones meteorológicas, siempre respetando las indicaciones del producto utilizado y el criterio profesional correspondiente.</p>
-        <p>Sudamericana tiene base en Villa Ángela, Chaco. La consulta inicial puede hacerse desde la web y se completa después con la información necesaria para cada trabajo.</p>
+    <section class="site-shell rain-hero">
+      <div class="rain-hero-copy reveal">
+        <span class="eyebrow">Información compartida por la comunidad rural</span>
+        <h1>Lluvias reportadas.</h1>
+        <p class="lead">Consultá mediciones recientes y compartí cuánto llovió en tu campo o zona. Los reportes publicados verifican el control del email del colaborador.</p>
       </div>
-      <aside class="service-detail-aside reveal">
-        <span class="eyebrow">Consulta inicial</span>
-        <h3>Localidad, hectáreas y objetivo.</h3>
-        <p>Esos tres datos ayudan a encuadrar rápidamente el pedido.</p>
-        <a class="btn btn-primary" href="presupuestos.html">Contactar</a>
-      </aside>
+
+      <div class="rain-hero-actions reveal">
+        <button class="btn btn-primary" type="button" data-open-report>+ Reportar lluvia</button>
+        <button class="btn btn-secondary" type="button" data-use-location>Ver mi zona</button>
+        <button class="btn btn-secondary" type="button" data-share-rain>Compartir</button>
+        <button class="btn btn-secondary rain-install-button" type="button" data-install-lluvias-app>Instalar app</button>
+      </div>
     </section>
 
-    <section class="section section-soft">
-      <div class="site-shell">
-        <div class="section-head reveal"><div><span class="eyebrow">Tipos de aplicación</span><h2>Herbicidas, fungicidas e insecticidas.</h2></div><p>La descripción del servicio es general. La operación concreta depende del producto, del cultivo, del objetivo, de la etiqueta y de las condiciones disponibles.</p></div>
-        <div class="detail-grid">
-          <article class="detail-card detail-card-simple reveal" data-num="01"><span class="eyebrow">Control</span><h3>Herbicidas</h3><p>Aplicaciones aéreas dentro de programas de control de malezas, coordinadas según la situación planteada y las indicaciones del producto utilizado.</p></article>
-          <article class="detail-card detail-card-simple reveal" data-num="02"><span class="eyebrow">Protección</span><h3>Fungicidas</h3><p>Intervenciones aéreas cuando la oportunidad operativa y el tiempo de respuesta forman parte de la planificación del cultivo.</p></article>
-          <article class="detail-card detail-card-simple reveal" data-num="03"><span class="eyebrow">Respuesta</span><h3>Insecticidas</h3><p>Aplicaciones aéreas ante escenarios de manejo de plagas que requieren una consulta rápida y una operación bien coordinada.</p></article>
-          <article class="detail-card detail-card-simple reveal" data-num="04"><span class="eyebrow">Meteorología</span><h3>Condiciones del momento</h3><p>Viento, ráfagas, humedad y lluvia inmediata son parte de la lectura meteorológica previa. La web ofrece una consulta informativa para acompañar esa evaluación.</p><a class="card-link" href="clima.html">Consultar clima agrícola →</a></article>
+    <section class="site-shell rain-workspace reveal" aria-labelledby="map-title">
+      <div class="rain-toolbar">
+        <div>
+          <span class="eyebrow">Mapa colaborativo</span>
+          <h2 id="map-title">Reportes recientes</h2>
+        </div>
+
+        <div class="rain-filters" role="group" aria-label="Período de reportes">
+          <button type="button" data-hours="6">6 h</button>
+          <button type="button" class="is-active" data-hours="24">24 h</button>
+          <button type="button" data-hours="72">3 días</button>
+          <button type="button" data-hours="168">7 días</button>
+        </div>
+      </div>
+
+      <div class="rain-map-shell">
+        <div id="rain-map" class="rain-map" role="application" aria-label="Mapa de lluvias reportadas"></div>
+
+        <div class="rain-map-status" data-map-status aria-live="polite">
+          Cargando reportes…
+        </div>
+
+        <div class="rain-map-legend" aria-label="Información del mapa">
+          <strong data-report-count>0 reportes</strong>
+          <span>Ubicaciones públicas aproximadas</span>
+        </div>
+      </div>
+
+      <div class="rain-trust-strip">
+        <div>
+          <strong>Email verificado</strong>
+          <span>Cada publicación se confirma con un código enviado al correo informado.</span>
+        </div>
+        <div>
+          <strong>Privacidad rural</strong>
+          <span>El mapa público desplaza o redondea el punto; no muestra email ni ubicación exacta.</span>
+        </div>
+        <div>
+          <strong>Dato colaborativo</strong>
+          <span>No reemplaza estaciones meteorológicas ni mediciones oficiales.</span>
         </div>
       </div>
     </section>
-
-    <section class="site-shell cta-strip reveal"><div><h2>¿Tenés un trabajo para evaluar?</h2><p>Contanos localidad, superficie y servicio para ordenar la consulta inicial.</p></div><a class="btn" href="presupuestos.html">Contactar</a></section>
-
   </main>
 
-  <footer class="site-footer"><div class="site-shell footer-wrap footer-wrap-simple"><div class="footer-social" aria-label="Redes sociales"><a href="https://www.instagram.com/sudamericanasrl/" target="_blank" rel="noopener noreferrer">Instagram</a><a href="https://www.linkedin.com/company/sudamericana-srl/" target="_blank" rel="noopener noreferrer">LinkedIn</a><a href="https://www.facebook.com/people/Sudamericana-SRL/61591677384655/" target="_blank" rel="noopener noreferrer">Facebook</a></div><small>© <span data-year></span> Sudamericana · Ruta 95 km 1024</small></div></footer>
+  <dialog class="rain-dialog" data-report-dialog aria-labelledby="report-title">
+    <form class="rain-dialog-card" data-report-form>
+      <div class="rain-dialog-head">
+        <div>
+          <span class="eyebrow">Compartir medición</span>
+          <h2 id="report-title">Reportar lluvia</h2>
+        </div>
+        <button class="rain-close" type="button" data-close-report aria-label="Cerrar">×</button>
+      </div>
+
+      <p class="rain-dialog-intro">Buscá una dirección, elegí el punto en el mapa o usá tu ubicación. Siempre revisá el pin antes de publicar.</p>
+
+      <div class="rain-address-block">
+        <label class="rain-field">
+          <span>Buscar dirección, calle o lugar <small>(opcional)</small></span>
+          <div class="rain-search-row">
+            <input class="input" type="search" data-address-search placeholder="Ej. Villa Ángela o San Martín 742">
+            <button class="btn btn-secondary" type="button" data-search-address>Buscar</button>
+          </div>
+        </label>
+        <p class="rain-form-status rain-inline-status" data-address-status aria-live="polite"></p>
+        <div class="rain-geocode-results" data-address-results hidden></div>
+        <small class="rain-map-attribution">Direcciones: © OpenStreetMap contributors</small>
+      </div>
+
+      <div class="rain-location-box">
+        <div>
+          <small>Ubicación seleccionada</small>
+          <strong data-selected-location>Sin seleccionar</strong>
+          <small class="rain-location-confidence" data-location-confidence></small>
+        </div>
+        <div class="rain-location-actions">
+          <button class="btn btn-secondary btn-small" type="button" data-dialog-location>Usar mi ubicación</button>
+          <button class="btn btn-secondary btn-small" type="button" data-pick-map>Elegir en mapa</button>
+        </div>
+      </div>
+
+      <div class="rain-form-grid">
+        <label class="rain-field">
+          <span>Email</span>
+          <input class="input" type="email" name="email" autocomplete="email" required maxlength="254" placeholder="tu@email.com">
+        </label>
+
+        <label class="rain-field">
+          <span>Milímetros</span>
+          <div class="rain-mm-input">
+            <input class="input" type="number" name="millimeters" inputmode="decimal" min="0.1" max="500" step="0.1" required placeholder="30">
+            <span>mm</span>
+          </div>
+        </label>
+
+        <label class="rain-field">
+          <span>Intensidad observada</span>
+          <select class="input" name="intensity" required>
+            <option value="">Seleccionar</option>
+            <option value="weak">Débil</option>
+            <option value="moderate">Moderada</option>
+            <option value="strong">Fuerte</option>
+          </select>
+        </label>
+
+        <label class="rain-field">
+          <span>Referencia de zona <small>(opcional)</small></span>
+          <input class="input" type="text" name="placeLabel" maxlength="100" placeholder="Ej. Colonia El Pastoril">
+        </label>
+      </div>
+
+      <div class="rain-checks">
+        <label><input type="checkbox" name="ongoing"> Sigue lloviendo</label>
+        <label><input type="checkbox" name="measured" checked> Medido con pluviómetro</label>
+      </div>
+
+      <label class="rain-field">
+        <span>Comentario breve <small>(opcional)</small></span>
+        <textarea class="input rain-textarea" name="comment" maxlength="220" rows="3" placeholder="Ej. 30 minutos de lluvia fuerte y sigue."></textarea>
+        <small class="rain-char-note">Máximo 220 caracteres.</small>
+      </label>
+
+      <div class="rain-turnstile" data-turnstile-host></div>
+
+      <p class="rain-form-note">Al publicar, el punto visible en el mapa será aproximado. Tu email no se muestra públicamente.</p>
+      <p class="rain-form-status" data-report-status aria-live="polite"></p>
+
+      <div class="rain-dialog-actions">
+        <button class="btn btn-secondary" type="button" data-close-report>Cancelar</button>
+        <button class="btn btn-primary" type="submit">Enviar código</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog class="rain-dialog" data-verify-dialog aria-labelledby="verify-title">
+    <form class="rain-dialog-card rain-verify-card" data-verify-form>
+      <div class="rain-dialog-head">
+        <div>
+          <span class="eyebrow">Verificación</span>
+          <h2 id="verify-title">Confirmá tu email</h2>
+        </div>
+      </div>
+
+      <p>Enviamos un código de 6 dígitos a <strong data-masked-email>tu email</strong>.</p>
+
+      <label class="rain-field">
+        <span>Código</span>
+        <input class="input rain-code-input" type="text" name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required placeholder="000000">
+      </label>
+
+      <p class="rain-form-status" data-verify-status aria-live="polite"></p>
+
+      <div class="rain-dialog-actions">
+        <button class="btn btn-secondary" type="button" data-cancel-verify>Cancelar</button>
+        <button class="btn btn-primary" type="submit">Publicar reporte</button>
+      </div>
+    </form>
+  </dialog>
+
+  <footer class="site-footer">
+    <div class="site-shell footer-wrap footer-wrap-simple">
+      <div class="footer-social" aria-label="Redes sociales">
+        <a href="https://www.instagram.com/sudamericanasrl/" target="_blank" rel="noopener noreferrer">Instagram</a>
+        <a href="https://www.linkedin.com/company/sudamericana-srl/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+        <a href="https://www.facebook.com/people/Sudamericana-SRL/61591677384655/" target="_blank" rel="noopener noreferrer">Facebook</a>
+      </div>
+      <small>© <span data-year></span> Sudamericana · Ruta 95 km 1024</small>
+    </div>
+  </footer>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
   <script src="assets/js/main.js"></script>
+  <script src="assets/js/lluvias.js"></script>
+
+  <div class="rain-modal" id="install-app-modal" aria-hidden="true">
+    <div class="rain-modal-backdrop" data-install-close></div>
+    <div class="rain-modal-card rain-install-card" role="dialog" aria-modal="true" aria-labelledby="install-app-title">
+      <button class="rain-modal-close" type="button" data-install-close aria-label="Cerrar">×</button>
+      <div class="rain-modal-kicker">APP LLUVIAS</div>
+      <h2 id="install-app-title">Instalar Lluvias</h2>
+      <p class="rain-install-lead">Abrí el mapa de lluvias más rápido desde tu teléfono.</p>
+
+      <div class="rain-install-panel" data-install-state="ready">
+        <p data-install-message>Preparando instalación…</p>
+      </div>
+
+      <div class="rain-install-ios" data-install-ios hidden>
+        <ol>
+          <li>Tocá el botón <strong>Compartir</strong> de Safari.</li>
+          <li>Elegí <strong>Agregar a inicio</strong>.</li>
+          <li>Confirmá con <strong>Agregar</strong>.</li>
+        </ol>
+      </div>
+
+      <div class="rain-install-actions">
+        <button class="btn btn-primary" type="button" data-install-primary>Abrir app</button>
+        <button class="btn btn-secondary" type="button" data-install-close>Cerrar</button>
+      </div>
+    </div>
+  </div>
+
 </body>
 </html>
