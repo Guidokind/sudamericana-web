@@ -1,0 +1,11 @@
+{
+  "javascript_syntax": "OK",
+  "turnstile_removed_from_initial_html": true,
+  "lazy_loader_present": true,
+  "report_turnstile_still_present": true,
+  "auth_turnstile_still_present": true,
+  "single_script_guard": true,
+  "map_optimization_preserved": true,
+  "account_fix_preserved": true,
+  "reports_logic_preserved": true
+}
