@@ -1,0 +1,10 @@
+{
+  "javascript_syntax": "OK",
+  "basic_layer_added_on_start": true,
+  "satellite_created_inside_lazy_function": true,
+  "satellite_has_reference_layer": true,
+  "map_mode_buttons": 2,
+  "old_dual_layer_block_removed": true,
+  "reports_logic_present": true,
+  "account_fix_present": true
+}
