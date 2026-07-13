@@ -1190,3 +1190,51 @@
     padding-inline: 11px;
   }
 }
+
+
+/* Corrección Fase 5.1: modal del ranking */
+.rain-dialog[data-ranking-dialog] {
+  width: min(94vw, 900px);
+  max-width: 900px;
+  overflow: hidden;
+}
+
+.rain-dialog[data-ranking-dialog] .rain-ranking-dialog-card {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+.rain-dialog[data-ranking-dialog] .rain-ranking-full {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.rain-dialog[data-ranking-dialog] .rain-rank-row {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+@media (max-width: 820px) {
+  .rain-dialog[data-ranking-dialog] {
+    width: calc(100vw - 28px);
+    max-width: calc(100vw - 28px);
+  }
+}
+
+@media (max-width: 560px) {
+  .rain-dialog[data-ranking-dialog] .rain-ranking-dialog-card {
+    padding: 20px 16px;
+  }
+
+  .rain-dialog[data-ranking-dialog] .rain-dialog-head h2 {
+    font-size: clamp(2rem, 10vw, 3rem);
+    overflow-wrap: anywhere;
+  }
+}
