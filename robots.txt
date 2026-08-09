@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://kindwerley.com/sitemap.xml
+Sitemap: https://sudamericanasrl.com/sitemap.xml

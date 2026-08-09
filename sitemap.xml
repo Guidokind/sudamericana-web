@@ -1,9 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://kindwerley.com/</loc>
-    <lastmod>2026-08-09</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>1.0</priority>
+    <loc>https://sudamericanasrl.com/</loc>
+    <lastmod>2026-07-04</lastmod>
+  </url>
+  <url>
+    <loc>https://sudamericanasrl.com/servicios.html</loc>
+    <lastmod>2026-07-04</lastmod>
+  </url>
+  <url>
+    <loc>https://sudamericanasrl.com/aplicaciones-aereas-agricolas.html</loc>
+    <lastmod>2026-07-04</lastmod>
+  </url>
+  <url>
+    <loc>https://sudamericanasrl.com/siembra-aerea.html</loc>
+    <lastmod>2026-07-04</lastmod>
+  </url>
+  <url>
+    <loc>https://sudamericanasrl.com/clima.html</loc>
+    <lastmod>2026-07-04</lastmod>
+  </url>
+  <url>
+    <loc>https://sudamericanasrl.com/presupuestos.html</loc>
+    <lastmod>2026-07-04</lastmod>
   </url>
 </urlset>
