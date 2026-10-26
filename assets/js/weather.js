@@ -14,8 +14,6 @@
   const gustEl = document.querySelector('[data-gust]');
   const humidityEl = document.querySelector('[data-humidity]');
   const rainEl = document.querySelector('[data-rain]');
-  const assessmentEl = document.querySelector('[data-spray-status]');
-  const assessmentDetailEl = document.querySelector('[data-assessment-detail]');
   const forecastEl = document.querySelector('[data-forecast]');
   const homeHourlyEl = document.querySelector('[data-home-hourly]');
 
@@ -88,33 +86,6 @@
     const currentHour = String(data.current.time || '').slice(0, 13);
     const prefixIndex = data.hourly.time.findIndex((time) => String(time).slice(0, 13) === currentHour);
     return prefixIndex >= 0 ? prefixIndex : 0;
-  }
-
-  function assessmentFor({ wind, gust, rain3h, humidity }) {
-    const reasons = [];
-
-    if (rain3h >= 45) reasons.push('alta probabilidad de lluvia en las próximas 3 h');
-    if (wind > 22) reasons.push('viento elevado');
-    if (gust > 32) reasons.push('ráfagas elevadas');
-
-    if (reasons.length) {
-      return { cls: 'bad', title: 'Desfavorables', detail: reasons.join(' · ') };
-    }
-
-    if (rain3h >= 25) reasons.push('lluvia próxima a vigilar');
-    if (wind > 15) reasons.push('viento moderado');
-    if (gust > 25) reasons.push('ráfagas a vigilar');
-    if (humidity < 35) reasons.push('humedad relativa baja');
-
-    if (reasons.length) {
-      return { cls: 'caution', title: 'A evaluar', detail: reasons.join(' · ') };
-    }
-
-    return {
-      cls: 'good',
-      title: 'Potencialmente favorables',
-      detail: 'viento moderado · ráfagas contenidas · baja probabilidad de lluvia inmediata'
-    };
   }
 
   async function geocodeSearch(query, count = 1) {
@@ -276,12 +247,6 @@
       .filter(Number.isFinite);
     const rain3h = nextRainValues.length ? Math.max(...nextRainValues) : 0;
 
-    const assessment = assessmentFor({
-      wind: Number(data.current.wind_speed_10m || 0),
-      gust: Number(data.current.wind_gusts_10m || 0),
-      rain3h,
-      humidity: Number(data.current.relative_humidity_2m || 0)
-    });
 
     if (cityEl) cityEl.textContent = label;
     if (tempEl) tempEl.textContent = `${Math.round(data.current.temperature_2m)}°`;
@@ -295,11 +260,6 @@
     if (humidityEl) humidityEl.textContent = `${Math.round(data.current.relative_humidity_2m)}%`;
     if (rainEl) rainEl.textContent = `${Math.round(rain3h)}%`;
 
-    if (assessmentEl) {
-      assessmentEl.className = `spray-status ${assessment.cls}`;
-      assessmentEl.textContent = assessment.title;
-    }
-    if (assessmentDetailEl) assessmentDetailEl.textContent = assessment.detail;
 
     renderHourly(data, hourlyIndex);
     renderDailyForecast(data);

@@ -554,7 +554,7 @@ h3 { font-size: 1.35rem; }
 
 .home-weather-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.55fr) minmax(280px, .75fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: 18px;
   margin-top: 22px;
 }
